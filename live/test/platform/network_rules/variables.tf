@@ -39,12 +39,12 @@ variable "enable_network_rules" {
 variable "network_rules" {
   description = "Map of network rules to manage (key = rule name)."
   type = map(object({
-    database    = string
-    schema      = string
-    type        = string
-    mode        = string
-    value_list  = list(string)
-    comment     = optional(string)
+    database   = string
+    schema     = string
+    type       = string
+    mode       = string
+    value_list = list(string)
+    comment    = optional(string)
   }))
   default = {}
 }

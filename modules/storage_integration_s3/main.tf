@@ -17,13 +17,13 @@ variable "name" {
 }
 
 variable "allowed_locations" {
-  type     = list(string)
-  default  = []
+  type    = list(string)
+  default = []
 }
 
 variable "blocked_locations" {
-  type     = list(string)
-  default  = []
+  type    = list(string)
+  default = []
 }
 
 variable "aws_role_arn" {
@@ -56,7 +56,7 @@ locals {
     if trimspace(integration_name) != ""
   }
 
- legacy_integration = (
+  legacy_integration = (
     var.name == null || try(trimspace(var.name), "") == "" ? {} : {
       trimspace(var.name) = {
         allowed_locations = distinct([for v in var.allowed_locations : trimspace(v)])
@@ -101,8 +101,8 @@ output "storage_integration_aws_external_ids" {
 output "storage_integration_name" {
   value = length(snowflake_storage_integration.this) == 0 ? null : (
     var.name != null && try(trimspace(var.name), "") != "" && try(contains(keys(snowflake_storage_integration.this), trimspace(var.name)), false)
-      ? snowflake_storage_integration.this[trimspace(var.name)].name
-      : values(snowflake_storage_integration.this)[0].name
+    ? snowflake_storage_integration.this[trimspace(var.name)].name
+    : values(snowflake_storage_integration.this)[0].name
   )
   description = "Legacy single integration name output."
 }
@@ -110,8 +110,8 @@ output "storage_integration_name" {
 output "storage_aws_iam_user_arn" {
   value = length(snowflake_storage_integration.this) == 0 ? null : (
     var.name != null && try(trimspace(var.name), "") != "" && try(contains(keys(snowflake_storage_integration.this), trimspace(var.name)), false)
-      ? snowflake_storage_integration.this[trimspace(var.name)].storage_aws_iam_user_arn
-      : values(snowflake_storage_integration.this)[0].storage_aws_iam_user_arn
+    ? snowflake_storage_integration.this[trimspace(var.name)].storage_aws_iam_user_arn
+    : values(snowflake_storage_integration.this)[0].storage_aws_iam_user_arn
   )
   description = "Legacy single AWS IAM user ARN output."
 }
@@ -119,8 +119,8 @@ output "storage_aws_iam_user_arn" {
 output "storage_aws_external_id" {
   value = length(snowflake_storage_integration.this) == 0 ? null : (
     var.name != null && try(trimspace(var.name), "") != "" && try(contains(keys(snowflake_storage_integration.this), trimspace(var.name)), false)
-      ? snowflake_storage_integration.this[trimspace(var.name)].storage_aws_external_id
-      : values(snowflake_storage_integration.this)[0].storage_aws_external_id
+    ? snowflake_storage_integration.this[trimspace(var.name)].storage_aws_external_id
+    : values(snowflake_storage_integration.this)[0].storage_aws_external_id
   )
   description = "Legacy single AWS external ID output."
 }

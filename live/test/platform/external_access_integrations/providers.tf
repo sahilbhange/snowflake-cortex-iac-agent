@@ -13,13 +13,13 @@ locals {
 }
 
 provider "snowflake" {
-  alias             = "accountadmin"
-  organization_name = var.organization_name
-  account_name      = var.account_name
-  user              = var.provisioning_user
-  role              = var.accountadmin_role
-  params            = local.snowflake_provider_params
-  authenticator     = local.snowflake_provider_private_key == null ? null : "SNOWFLAKE_JWT"
+  alias                  = "accountadmin"
+  organization_name      = var.organization_name
+  account_name           = var.account_name
+  user                   = var.provisioning_user
+  role                   = var.accountadmin_role
+  params                 = local.snowflake_provider_params
+  authenticator          = local.snowflake_provider_private_key == null ? null : "SNOWFLAKE_JWT"
   private_key            = local.snowflake_provider_private_key
   private_key_passphrase = var.private_key_passphrase
 }

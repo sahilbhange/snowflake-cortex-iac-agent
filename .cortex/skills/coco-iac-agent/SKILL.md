@@ -44,11 +44,13 @@ Route every request to the appropriate skill:
 | New team/squad (role + warehouse + schemas) | `$coco-iac-agent-new-workload` |
 | Add a user, update RBAC, role grants | `$coco-iac-agent-new-role-user` |
 | Explain a plan output, flag risks | `$coco-iac-agent-plan-review` |
+| Push config changes to Git after apply | `$coco-iac-agent-git-push` |
 
 **Skill behaviors:**
 - `drift-report` and `bootstrap-guide`: Execute autonomously, report results
 - `new-workload`, `new-role-user`: Generate tfvars, run plans, wait for apply approval
 - `plan-review`: Analyze plan output, flag risks, recommend go/no-go
+- `git-push`: Detects changed configs, generates branch name + commit message, outputs git commands — user runs them
 
 ## Workflow
 
@@ -61,7 +63,8 @@ Intent detection
      |-> Drift check across all stacks -> $coco-iac-agent-drift-report
      |-> New team / workload           -> $coco-iac-agent-new-workload
      |-> Add user / RBAC change        -> $coco-iac-agent-new-role-user
-     └-> Plan review + risk check      -> $coco-iac-agent-plan-review
+     |-> Plan review + risk check      -> $coco-iac-agent-plan-review
+     └-> Push changes to Git after apply -> $coco-iac-agent-git-push
 ```
 
 ## Skill Routing Guard
@@ -97,3 +100,7 @@ Assistant: Launches `$coco-iac-agent-bootstrap-guide` agent. Agent runs pre-flig
 ### Example 5: Plan review
 User: `$coco-iac-agent review this plan [paste output]`
 Assistant: Routes to `$coco-iac-agent-plan-review`. Returns two-section report: (1) risk classification -- ForceNew, destroys, RBAC expansion; (2) standards compliance -- v2.x resource names, provider aliases, naming conventions, grant rules, lifecycle blocks. Ends with go/no-go recommendation.
+
+### Example 6: Push changes after apply
+User: `$coco-iac-agent push my changes` (after MARKETING workload applied)
+Assistant: Routes to `$coco-iac-agent-git-push`. Detects changed configs (`create_role.tfvars`, `create_warehouse.tfvars`, `create_schema.tfvars`), generates branch `feat/test-add-marketing-workload`, commit message `feat(configs): onboard MARKETING squad — role, warehouse, schema in test`, outputs complete git command block + PR body for user to copy-paste and run.

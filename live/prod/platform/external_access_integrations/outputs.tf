@@ -10,8 +10,8 @@ output "external_access_integration_names" {
 output "external_access_integration_name" {
   value = length(local.integration_names) == 0 ? null : (
     var.integration_name != null && try(trimspace(var.integration_name), "") != "" && try(contains(local.integration_names, trimspace(var.integration_name)), false)
-      ? trimspace(var.integration_name)
-      : local.integration_names[0]
+    ? trimspace(var.integration_name)
+    : local.integration_names[0]
   )
   description = "Legacy single integration name."
 }

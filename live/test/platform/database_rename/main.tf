@@ -8,8 +8,8 @@ locals {
   pending_requests = {
     for id, req in local.filtered_requests :
     id => {
-      from       = trimspace(req.from)
-      to         = trimspace(req.to)
+      from = trimspace(req.from)
+      to   = trimspace(req.to)
       connection_flag = (
         trimspace(try(req.snowsql_connection, coalesce(var.default_snowsql_connection, ""))) != ""
         ? format("-c %s", trimspace(try(req.snowsql_connection, coalesce(var.default_snowsql_connection, ""))))

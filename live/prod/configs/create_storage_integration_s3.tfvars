@@ -5,18 +5,18 @@ storage_integrations = {
     allowed_locations = [
       "s3://example.terraform.s3/"
     ]
-    enabled      = true              # matches ENABLED = true
-    comment      = ""                # or omit if you don’t need one
-    blocked_locations = []           # optional; omit if you don’t use it
+    enabled           = true # matches ENABLED = true
+    comment           = ""   # or omit if you don’t need one
+    blocked_locations = []   # optional; omit if you don’t use it
   }
 
   AWS_DEV_S3_INT_TEST2 = {
     allowed_locations = [
       "s3://example.terraform.s3/"
     ]
-    enabled      = true              # matches ENABLED = true
-    comment      = ""                # or omit if you don’t need one
-    blocked_locations = []           # optional; omit if you don’t use it
+    enabled           = true # matches ENABLED = true
+    comment           = ""   # or omit if you don’t need one
+    blocked_locations = []   # optional; omit if you don’t use it
   }
 
 }

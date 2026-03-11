@@ -38,7 +38,7 @@ variable "enable_schema" {
 }
 
 variable "schema_database" {
-  type = string
+  type    = string
   default = null
 
 }

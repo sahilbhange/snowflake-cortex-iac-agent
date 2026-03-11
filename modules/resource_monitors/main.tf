@@ -43,7 +43,7 @@ locals {
 
   legacy_resource_monitor = (
     var.name == null || try(trimspace(var.name), "") == "" || var.credit_quota == null
-  ) ? {} : {
+    ) ? {} : {
     trimspace(var.name) = {
       credit_quota    = var.credit_quota
       frequency       = var.frequency
@@ -65,9 +65,9 @@ locals {
 resource "snowflake_resource_monitor" "this" {
   for_each = local.resolved_resource_monitors
 
-  name            = each.key
-  credit_quota    = each.value.credit_quota
-  frequency       = coalesce(each.value.frequency, local.legacy_frequency_default)
+  name         = each.key
+  credit_quota = each.value.credit_quota
+  frequency    = coalesce(each.value.frequency, local.legacy_frequency_default)
   start_timestamp = (
     try(trimspace(each.value.start_timestamp), "") != "" ?
     try(trimspace(each.value.start_timestamp), "") :
