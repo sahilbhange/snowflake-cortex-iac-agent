@@ -31,6 +31,7 @@ CoCo never runs `terraform apply`. Every apply is explicitly yours.
 | `$coco-iac-agent-new-workload` | Skill | Onboard a team: role + warehouse + schemas + grants |
 | `$coco-iac-agent-new-role-user` | Skill | Add a user, create a role, update RBAC |
 | `$coco-iac-agent-plan-review` | Skill | Risk classification + standards compliance check + go/no-go |
+| `$coco-iac-agent-git-push` | Skill | Generate branch name, commit message, and PR commands after apply |
 
 **Agents** run commands themselves and report back.
 **Skills** generate config changes and plan commands for you to run.

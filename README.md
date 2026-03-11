@@ -15,7 +15,7 @@ live/
   prod/                        ← pre-production (mirrors test structure)
 modules/                        ← reusable Terraform modules
 .cortex/
-  skills/                       ← CoCo skills and agents (router, new-workload, new-role-user, plan-review, drift-report, bootstrap-guide)
+  skills/                       ← CoCo skills and agents (router, new-workload, new-role-user, plan-review, drift-report, bootstrap-guide, git-push)
 references/                     ← stack order, workflow rules, prompt examples
 ```
 

@@ -86,6 +86,8 @@ bash scripts/scan-forcenew.sh "$plan_out"
     - Workspace schema created (yes/no, location in WORKSPACE_DB)
     - Standards compliance status
     - Next steps: set password or RSA key, enroll in MFA
+10. **GIT PUSH** — after summary, always prompt:
+    > "Config files have been updated. Run `$coco-iac-agent-git-push` to generate the branch, commit message, and PR commands for these changes."
 
 ## Key Rules
 - `login_name` is ForceNew — never change on an existing user

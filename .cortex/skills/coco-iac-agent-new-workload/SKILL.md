@@ -118,6 +118,8 @@ bash scripts/scan-forcenew.sh "$plan_out"
     - Standards compliance status (N/N checks passed)
     - Access summary
     - Next steps (passwords, RSA keys, MFA, additional grants)
+13. **GIT PUSH** — after summary, always prompt:
+    > "Config files have been updated. Run `$coco-iac-agent-git-push` to generate the branch, commit message, and PR commands for these changes."
 
 ## Naming Rules
 - Apply env suffix: `MARKETING_ROLE_TEST` in test, `MARKETING_ROLE_STAGE` in stage, `MARKETING_ROLE` in prod

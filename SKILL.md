@@ -29,6 +29,7 @@ Route every request to the appropriate skill or agent:
 | New team/squad (role + warehouse + schemas) | Skill | `$coco-iac-agent-new-workload` |
 | Add a user, update RBAC, role grants | Skill | `$coco-iac-agent-new-role-user` |
 | Explain a plan output, flag risks | Skill | `$coco-iac-agent-plan-review` |
+| Push config changes to Git after apply | Skill | `$coco-iac-agent-git-push` |
 
 **Agents** execute commands independently and report back.
 **Skills** generate tfvars changes and plan commands for you to run.

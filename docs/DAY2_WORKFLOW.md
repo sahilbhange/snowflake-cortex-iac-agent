@@ -431,3 +431,4 @@ bash scripts/apply-changes.sh test \
 | Add role only | `$coco-iac-agent create <ROLE> in <env>` | roles |
 | Check drift | `$coco-iac-agent-drift-report for <env>` | all stacks (read-only) |
 | Review plan output | `$coco-iac-agent-plan-review` + paste plan | — |
+| Push changes to Git after apply | `$coco-iac-agent-git-push` | — |
