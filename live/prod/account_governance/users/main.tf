@@ -1,5 +1,5 @@
 module "users" {
-  source    = "../../../../modules/users"
+  source = "../../../../modules/users"
   providers = {
     snowflake          = snowflake.secadmin
     snowflake.sysadmin = snowflake.sysadmin

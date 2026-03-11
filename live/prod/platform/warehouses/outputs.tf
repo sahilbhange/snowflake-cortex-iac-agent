@@ -10,8 +10,8 @@ output "warehouse_names" {
 output "warehouse_name" {
   value = length(local.warehouse_outputs) == 0 ? null : (
     var.warehouse_name != null && try(trimspace(var.warehouse_name), "") != "" && try(contains(keys(local.warehouse_outputs), trimspace(var.warehouse_name)), false)
-      ? local.warehouse_outputs[trimspace(var.warehouse_name)]
-      : values(local.warehouse_outputs)[0]
+    ? local.warehouse_outputs[trimspace(var.warehouse_name)]
+    : values(local.warehouse_outputs)[0]
   )
   description = "Legacy single warehouse name for backwards compatibility."
 }

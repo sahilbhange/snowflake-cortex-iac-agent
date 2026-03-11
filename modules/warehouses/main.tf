@@ -1,12 +1,12 @@
 variable "warehouses" {
   description = "Map of warehouses to manage (key = warehouse name)."
   type = map(object({
-    size               = optional(string)
-    auto_suspend       = optional(number)
-    auto_resume        = optional(bool)
-    min_cluster_count  = optional(number)
-    max_cluster_count  = optional(number)
-    comment            = optional(string)
+    size              = optional(string)
+    auto_suspend      = optional(number)
+    auto_resume       = optional(bool)
+    min_cluster_count = optional(number)
+    max_cluster_count = optional(number)
+    comment           = optional(string)
   }))
   default = {}
 }
@@ -62,12 +62,12 @@ locals {
 
   explicit_warehouses = {
     for warehouse_name, cfg in var.warehouses : trimspace(warehouse_name) => {
-      size               = coalesce(try(cfg.size, null), local.default_size)
-      auto_suspend       = coalesce(try(cfg.auto_suspend, null), local.default_auto_suspend)
-      auto_resume        = coalesce(try(cfg.auto_resume, null), local.default_auto_resume)
-      min_cluster_count  = coalesce(try(cfg.min_cluster_count, null), local.default_min_cluster_count)
-      max_cluster_count  = coalesce(try(cfg.max_cluster_count, null), local.default_max_cluster_count)
-      comment            = try(cfg.comment, var.comment)
+      size              = coalesce(try(cfg.size, null), local.default_size)
+      auto_suspend      = coalesce(try(cfg.auto_suspend, null), local.default_auto_suspend)
+      auto_resume       = coalesce(try(cfg.auto_resume, null), local.default_auto_resume)
+      min_cluster_count = coalesce(try(cfg.min_cluster_count, null), local.default_min_cluster_count)
+      max_cluster_count = coalesce(try(cfg.max_cluster_count, null), local.default_max_cluster_count)
+      comment           = try(cfg.comment, var.comment)
     }
     if trimspace(warehouse_name) != ""
   }
@@ -75,12 +75,12 @@ locals {
   legacy_warehouse = (
     var.name == null || try(trimspace(var.name), "") == "" ? {} : {
       trimspace(var.name) = {
-        size               = local.default_size
-        auto_suspend       = local.default_auto_suspend
-        auto_resume        = local.default_auto_resume
-        min_cluster_count  = local.default_min_cluster_count
-        max_cluster_count  = local.default_max_cluster_count
-        comment            = var.comment
+        size              = local.default_size
+        auto_suspend      = local.default_auto_suspend
+        auto_resume       = local.default_auto_resume
+        min_cluster_count = local.default_min_cluster_count
+        max_cluster_count = local.default_max_cluster_count
+        comment           = var.comment
       }
     }
   )
@@ -108,8 +108,8 @@ output "warehouse_names" {
 output "warehouse_name" {
   value = length(snowflake_warehouse.this) == 0 ? null : (
     var.name != null && try(trimspace(var.name), "") != "" && try(contains(keys(snowflake_warehouse.this), trimspace(var.name)), false)
-      ? snowflake_warehouse.this[trimspace(var.name)].name
-      : values(snowflake_warehouse.this)[0].name
+    ? snowflake_warehouse.this[trimspace(var.name)].name
+    : values(snowflake_warehouse.this)[0].name
   )
   description = "Legacy single warehouse name output for backwards compatibility."
 }

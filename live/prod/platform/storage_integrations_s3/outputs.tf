@@ -20,8 +20,8 @@ output "storage_integration_aws_external_ids" {
 output "storage_integration_name" {
   value = local.integration_outputs == null ? null : (
     var.si_name != null && try(trimspace(var.si_name), "") != "" && try(contains(keys(local.integration_outputs.storage_integration_names), trimspace(var.si_name)), false)
-      ? local.integration_outputs.storage_integration_names[trimspace(var.si_name)]
-      : values(local.integration_outputs.storage_integration_names)[0]
+    ? local.integration_outputs.storage_integration_names[trimspace(var.si_name)]
+    : values(local.integration_outputs.storage_integration_names)[0]
   )
   description = "Legacy single integration name."
 }
@@ -29,8 +29,8 @@ output "storage_integration_name" {
 output "storage_aws_iam_user_arn" {
   value = local.integration_outputs == null ? null : (
     var.si_name != null && try(trimspace(var.si_name), "") != "" && try(contains(keys(local.integration_outputs.storage_integration_aws_iam_user_arns), trimspace(var.si_name)), false)
-      ? local.integration_outputs.storage_integration_aws_iam_user_arns[trimspace(var.si_name)]
-      : values(local.integration_outputs.storage_integration_aws_iam_user_arns)[0]
+    ? local.integration_outputs.storage_integration_aws_iam_user_arns[trimspace(var.si_name)]
+    : values(local.integration_outputs.storage_integration_aws_iam_user_arns)[0]
   )
   description = "Legacy single AWS IAM user ARN."
 }
@@ -38,8 +38,8 @@ output "storage_aws_iam_user_arn" {
 output "storage_aws_external_id" {
   value = local.integration_outputs == null ? null : (
     var.si_name != null && try(trimspace(var.si_name), "") != "" && try(contains(keys(local.integration_outputs.storage_integration_aws_external_ids), trimspace(var.si_name)), false)
-      ? local.integration_outputs.storage_integration_aws_external_ids[trimspace(var.si_name)]
-      : values(local.integration_outputs.storage_integration_aws_external_ids)[0]
+    ? local.integration_outputs.storage_integration_aws_external_ids[trimspace(var.si_name)]
+    : values(local.integration_outputs.storage_integration_aws_external_ids)[0]
   )
   description = "Legacy single AWS external ID."
 }

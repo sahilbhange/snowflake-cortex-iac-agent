@@ -20,12 +20,12 @@ module "network_rules" {
   source    = "../../../../modules/network_rules"
   providers = { snowflake = snowflake.accountadmin }
 
-  network_rules       = { for name, cfg in local.resolved_network_rules : trimspace(name) => cfg }
-  name                = var.network_rule_name
-  database            = var.network_rule_database
-  schema              = var.network_rule_schema
-  type                = var.network_rule_type
-  mode                = var.network_rule_mode
-  value_list          = var.network_rule_value_list
-  comment             = var.network_rule_comment
+  network_rules = { for name, cfg in local.resolved_network_rules : trimspace(name) => cfg }
+  name          = var.network_rule_name
+  database      = var.network_rule_database
+  schema        = var.network_rule_schema
+  type          = var.network_rule_type
+  mode          = var.network_rule_mode
+  value_list    = var.network_rule_value_list
+  comment       = var.network_rule_comment
 }

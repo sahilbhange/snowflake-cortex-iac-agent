@@ -76,11 +76,11 @@ locals {
 resource "snowflake_stage" "this" {
   for_each = local.resolved_stages
 
-  name      = each.key
-  database  = each.value.database
-  schema    = each.value.schema
-  url       = each.value.url
-  comment   = each.value.comment
+  name     = each.key
+  database = each.value.database
+  schema   = each.value.schema
+  url      = each.value.url
+  comment  = each.value.comment
 
   storage_integration = each.value.storage_integration
 }
@@ -93,8 +93,8 @@ output "stage_fqns" {
 output "stage_fqn" {
   value = length(snowflake_stage.this) == 0 ? null : (
     var.name != null && try(trimspace(var.name), "") != "" && try(contains(keys(snowflake_stage.this), trimspace(var.name)), false)
-      ? "${snowflake_stage.this[trimspace(var.name)].database}.${snowflake_stage.this[trimspace(var.name)].schema}.${snowflake_stage.this[trimspace(var.name)].name}"
-      : "${values(snowflake_stage.this)[0].database}.${values(snowflake_stage.this)[0].schema}.${values(snowflake_stage.this)[0].name}"
+    ? "${snowflake_stage.this[trimspace(var.name)].database}.${snowflake_stage.this[trimspace(var.name)].schema}.${snowflake_stage.this[trimspace(var.name)].name}"
+    : "${values(snowflake_stage.this)[0].database}.${values(snowflake_stage.this)[0].schema}.${values(snowflake_stage.this)[0].name}"
   )
   description = "Legacy single stage FQN output for backwards compatibility."
 }

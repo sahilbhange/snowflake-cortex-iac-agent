@@ -48,12 +48,12 @@ variable "enable_external_access_integrations" {
 variable "external_access_integrations" {
   description = "Map of external access integrations to manage (key = integration name)."
   type = map(object({
-    enabled                   = optional(bool)
-    allowed_network_rules     = optional(list(string))
-    blocked_network_rules     = optional(list(string))
-    allowed_api_integrations  = optional(list(string))
-    blocked_api_integrations  = optional(list(string))
-    comment                   = optional(string)
+    enabled                  = optional(bool)
+    allowed_network_rules    = optional(list(string))
+    blocked_network_rules    = optional(list(string))
+    allowed_api_integrations = optional(list(string))
+    blocked_api_integrations = optional(list(string))
+    comment                  = optional(string)
   }))
   default = {}
 }

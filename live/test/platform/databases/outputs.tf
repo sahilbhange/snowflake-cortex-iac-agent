@@ -4,7 +4,7 @@ locals {
 
 output "database_names" {
   value       = local.database_name_map
-  description = "Map of database names managed by this stack." 
+  description = "Map of database names managed by this stack."
 }
 
 output "database_name" {

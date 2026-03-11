@@ -1,6 +1,6 @@
-variable "name"        { type = string }
+variable "name" { type = string }
 
-variable "comment"     {
+variable "comment" {
   type    = string
   default = null
 }

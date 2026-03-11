@@ -10,8 +10,8 @@ output "network_rule_full_names" {
 output "network_rule_name" {
   value = length(local.network_rule_outputs) == 0 ? null : (
     var.network_rule_name != null && try(trimspace(var.network_rule_name), "") != "" && try(contains(keys(local.network_rule_outputs), trimspace(var.network_rule_name)), false)
-      ? local.network_rule_outputs[trimspace(var.network_rule_name)]
-      : values(local.network_rule_outputs)[0]
+    ? local.network_rule_outputs[trimspace(var.network_rule_name)]
+    : values(local.network_rule_outputs)[0]
   )
   description = "Legacy single network rule output."
 }

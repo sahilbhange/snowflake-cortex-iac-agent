@@ -68,12 +68,12 @@ users = {
   }
 
   psingh = {
-    first_name        = "Priya"
-    last_name         = "Singh"
-    email             = "psingh@company.com"
-    default_role      = "DATA_PLATFORM_ROLE"
-    default_warehouse = "DATA_PLATFORM_WH"
-    roles             = ["DATA_PLATFORM_ROLE"]
+    first_name                             = "Priya"
+    last_name                              = "Singh"
+    email                                  = "psingh@company.com"
+    default_role                           = "DATA_PLATFORM_ROLE"
+    default_warehouse                      = "DATA_PLATFORM_WH"
+    roles                                  = ["DATA_PLATFORM_ROLE"]
     workspace_schema_additional_privileges = ["CREATE PIPE", "CREATE STREAM", "CREATE TASK"]
   }
 

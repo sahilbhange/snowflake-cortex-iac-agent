@@ -10,8 +10,8 @@ output "stage_fqns" {
 output "stage_fqn" {
   value = length(local.stage_outputs) == 0 ? null : (
     var.stage_name != null && try(trimspace(var.stage_name), "") != "" && try(contains(keys(local.stage_outputs), trimspace(var.stage_name)), false)
-      ? local.stage_outputs[trimspace(var.stage_name)]
-      : values(local.stage_outputs)[0]
+    ? local.stage_outputs[trimspace(var.stage_name)]
+    : values(local.stage_outputs)[0]
   )
   description = "Legacy single stage FQN for backwards compatibility."
 }

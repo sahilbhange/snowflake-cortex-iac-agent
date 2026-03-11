@@ -39,12 +39,12 @@ variable "enable_warehouse" {
 variable "warehouses" {
   description = "Map of warehouses to manage (key = warehouse name)."
   type = map(object({
-    size               = optional(string)
-    auto_suspend       = optional(number)
-    auto_resume        = optional(bool)
-    min_cluster_count  = optional(number)
-    max_cluster_count  = optional(number)
-    comment            = optional(string)
+    size              = optional(string)
+    auto_suspend      = optional(number)
+    auto_resume       = optional(bool)
+    min_cluster_count = optional(number)
+    max_cluster_count = optional(number)
+    comment           = optional(string)
   }))
   default = {}
 }

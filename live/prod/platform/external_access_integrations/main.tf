@@ -16,8 +16,8 @@ locals {
 }
 
 module "external_access_integrations" {
-  count     = var.enable_external_access_integrations ? 1 : 0
-  source    = "../../../../modules/external_access_integrations"
+  count  = var.enable_external_access_integrations ? 1 : 0
+  source = "../../../../modules/external_access_integrations"
 
   external_access_integrations = { for name, cfg in local.resolved_integrations : trimspace(name) => cfg }
   snowsql_connection           = var.snowsql_connection

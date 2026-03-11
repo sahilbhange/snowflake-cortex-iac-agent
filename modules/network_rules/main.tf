@@ -1,12 +1,12 @@
 variable "network_rules" {
   description = "Map of network rules to manage (key = network rule name)."
   type = map(object({
-    database    = string
-    schema      = string
-    type        = string
-    mode        = string
-    value_list  = list(string)
-    comment     = optional(string)
+    database   = string
+    schema     = string
+    type       = string
+    mode       = string
+    value_list = list(string)
+    comment    = optional(string)
   }))
   default = {}
 }
@@ -42,8 +42,8 @@ variable "mode" {
 }
 
 variable "value_list" {
-  type     = list(string)
-  default  = []
+  type    = list(string)
+  default = []
 }
 
 variable "comment" {
@@ -106,8 +106,8 @@ output "network_rule_full_names" {
 output "network_rule_name" {
   value = length(snowflake_network_rule.this) == 0 ? null : (
     var.name != null && try(trimspace(var.name), "") != "" && try(contains(keys(snowflake_network_rule.this), trimspace(var.name)), false)
-      ? snowflake_network_rule.this[trimspace(var.name)].name
-      : values(snowflake_network_rule.this)[0].name
+    ? snowflake_network_rule.this[trimspace(var.name)].name
+    : values(snowflake_network_rule.this)[0].name
   )
   description = "Legacy single network rule output."
 }

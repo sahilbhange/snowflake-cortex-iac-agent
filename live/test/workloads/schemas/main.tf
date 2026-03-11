@@ -1,7 +1,7 @@
 locals {
-  platform_database_names  = {}
-  legacy_database_name     = null
-  default_database         = var.schema_database
+  platform_database_names = {}
+  legacy_database_name    = null
+  default_database        = var.schema_database
 
   explicit_schemas = {
     for name, cfg in var.schemas : trimspace(name) => {

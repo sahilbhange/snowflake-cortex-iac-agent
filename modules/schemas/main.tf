@@ -1,9 +1,9 @@
 variable "database" { type = string }
-variable "name"     { type = string }
-variable "comment"  { 
-  type = string
-  default = null 
-  }
+variable "name" { type = string }
+variable "comment" {
+  type    = string
+  default = null
+}
 
 resource "snowflake_schema" "this" {
   database = var.database

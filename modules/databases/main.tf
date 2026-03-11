@@ -1,4 +1,4 @@
-variable "name"        { type = string }
+variable "name" { type = string }
 variable "comment" {
   type    = string
   default = null
@@ -9,9 +9,9 @@ variable "data_retention_time_in_days" {
 }
 
 resource "snowflake_database" "this" {
-  name                         = var.name
-  data_retention_time_in_days  = var.data_retention_time_in_days
-  comment                      = var.comment
+  name                        = var.name
+  data_retention_time_in_days = var.data_retention_time_in_days
+  comment                     = var.comment
 }
 
 output "database_name" { value = snowflake_database.this.name }

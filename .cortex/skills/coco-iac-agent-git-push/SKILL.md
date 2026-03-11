@@ -23,13 +23,16 @@ Detect changed config files, derive a meaningful branch name and commit message 
 
 ## Steps
 
-### 1. Detect changes
+### 1. Format and detect changes
 Run:
 ```bash
+terraform fmt -recursive
 git status --short
 git diff --name-only
 ```
-Identify which `live/<env>/configs/*.tfvars` files changed. This determines scope.
+`terraform fmt -recursive` runs first — it reformats any `.tf` and `.tfvars` files in place so CI never fails on formatting. Any files it touches will appear in `git status` and must be included in `git add`.
+
+Identify which `live/<env>/configs/*.tfvars` and stack `.tf` files changed. This determines scope.
 
 ### 2. Derive context
 From the changed files and the current session (what was provisioned), extract:
@@ -75,7 +78,7 @@ git pull origin main
 # 2. Create branch
 git checkout -b <branch-name>
 
-# 3. Stage only the changed config files
+# 3. Stage only the changed files (configs + any .tf files reformatted by fmt)
 git add <file1> <file2> ...
 
 # 4. Commit
@@ -119,6 +122,7 @@ After outputting commands, add:
 - **One logical change per branch** — if multiple workloads changed in one session, split into separate branches
 - **Never force push** — the initial repo setup was a one-time exception
 - If `git status` shows unexpected files (e.g. `.terraform/`, `*.tfstate`, `*.pem`), flag them and do NOT include in `git add`
+- Always run `terraform fmt -recursive` before staging — include any reformatted `.tf`/`.tfvars` files in `git add`
 
 ## Constraints
 - This skill outputs commands only — it does not run `git push`, `git commit`, or `gh pr create`
