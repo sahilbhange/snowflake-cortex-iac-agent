@@ -1,0 +1,29 @@
+name: diagrams
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - references/architecture.mmd
+  workflow_dispatch:
+
+jobs:
+  render-mermaid:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Render Mermaid to PNG
+        uses: docker://ghcr.io/mermaid-js/mermaid-cli:10.9.0
+        with:
+          args: -i references/architecture.mmd -o references/architecture.png
+
+      - name: Commit diagram
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: render architecture diagram"
+          file_pattern: references/architecture.png
+

@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Validate all Terraform roots
+        shell: bash
+        run: |
+          set -euo pipefail
+          roots=$(find live -type f -name '*.tf' -not -path '*/backend_tmp/*' -printf '%h\n' | sort -u)
+          echo "Found Terraform roots:" $roots
+          for d in $roots; do
+            echo "==> Validating $d"
+            (cd "$d" && terraform init -backend=false -input=false -upgrade && terraform validate)
+          done
+
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+      - run: tflint --version
+      - run: tflint --init
+      - run: tflint -f compact
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
