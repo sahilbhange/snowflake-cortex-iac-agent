@@ -16,7 +16,26 @@ tools:
 ## When to Use
 - After `$coco-iac-agent-new-workload` or `$coco-iac-agent-new-role-user` completes and the user confirms apply succeeded
 - After any manual config change to `live/<env>/configs/*.tfvars`
+- **After importing unmanaged objects** and updating tfvars to match Snowflake reality
+- **After drift reconciliation** where tfvars was updated to accept Snowflake changes
 - When the user says "push changes", "commit this", "save to git", "open a PR"
+
+## Why PR Review is Mandatory
+
+**All tfvars changes must go through PR review — even when accepting Snowflake reality.**
+
+| Change Type | Why PR Required |
+|-------------|-----------------|
+| New resource (apply) | Standard change control |
+| Import + tfvars update | Legitimizes shadow IT — needs approval |
+| Drift acceptance | Someone bypassed process — document why |
+| Config correction | Audit trail for compliance |
+
+This ensures:
+- ✅ Audit trail for all infrastructure changes
+- ✅ Team visibility into what changed and why
+- ✅ Approval process even for "accept reality" changes
+- ✅ Prevents silent drift accumulation
 
 ## Goal
 Detect changed config files, derive a meaningful branch name and commit message from what was provisioned, and output the exact git commands — ready to copy-paste. The user runs the commands; this skill never pushes.
@@ -95,12 +114,22 @@ gh pr create --title "<same as commit subject>" --body "$(cat <<'EOF'
 - <bullet: resource added/changed>
 - <bullet: env>
 
+## Change Type
+- [ ] New resource (terraform apply)
+- [ ] Import existing object (terraform import)
+- [ ] Drift reconciliation (tfvars updated to match Snowflake)
+- [ ] Config correction / cleanup
+
 ## Applied
 - [ ] terraform apply confirmed by user
+- [ ] terraform import completed (if importing)
+- [ ] terraform plan shows no changes (state matches reality)
 
-## Checklist
+## Review Checklist
 - [ ] Plan reviewed before apply
-- [ ] No ForceNew on databases or roles
+- [ ] No ForceNew on databases, warehouses, or roles
+- [ ] If drift acceptance: documented why change was made outside Terraform
+- [ ] If import: verified tfvars matches current Snowflake config
 - [ ] Branch will be deleted after merge
 EOF
 )"
