@@ -62,6 +62,44 @@ Access roles own the privileges; functional roles compose them. Map team needs t
 
 If an access role for the team's specific schema does not exist yet, create it in `create_role.tfvars` before the functional role.
 
+## Importing Existing Objects vs Creating New
+
+⚠️ **CRITICAL: Always check if objects already exist in Snowflake before proceeding**
+
+Before generating tfvars, query Snowflake to check if objects exist:
+```sql
+SHOW ROLES LIKE '<TEAM>%';
+SHOW WAREHOUSES LIKE '<TEAM>%';
+SHOW USERS LIKE '<username>';
+SELECT SCHEMA_NAME FROM <DB>.INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME LIKE '<TEAM>%';
+```
+
+**If objects ALREADY EXIST (from drift report or manual creation):**
+1. Add tfvars entries matching the CURRENT Snowflake config (not desired state)
+2. Use `terraform import` to capture existing objects in state
+3. Run `terraform plan` to verify zero changes
+4. Only then modify tfvars to desired state and apply changes
+
+**Import commands:**
+```bash
+# Roles
+terraform -chdir=live/<env>/account_governance/roles import 'module.role["<ROLE_NAME>"].snowflake_account_role.this' '<ROLE_NAME>'
+
+# Warehouses  
+terraform -chdir=live/<env>/platform/warehouses import 'module.warehouse[0].snowflake_warehouse.this["<WH_NAME>"]' '<WH_NAME>'
+
+# Users
+terraform -chdir=live/<env>/account_governance/users import 'module.users.snowflake_user.this["<username>"]' '<username>'
+
+# Schemas
+terraform -chdir=live/<env>/workloads/schemas import 'module.schema["<SCHEMA_NAME>"].snowflake_schema.this' '"<DATABASE>"."<SCHEMA_NAME>"'
+```
+
+**If objects DO NOT EXIST (new workload):**
+- Proceed with normal tfvars generation and `terraform apply`
+
+**NEVER recreate existing objects** — this destroys data, breaks grants, and locks out users.
+
 ## Steps
 1. Read existing `live/<env>/configs/create_role.tfvars` — follow format exactly
 2. Add any new **access roles** the team needs (e.g. `FINANCE_READ`, `FINANCE_WRITE`) under SYSADMIN
@@ -132,8 +170,7 @@ bash scripts/scan-forcenew.sh "$plan_out"
 - Role must be parented under SYSADMIN — never ACCOUNTADMIN
 - Warehouse must have `auto_suspend` (default 60s) and `auto_resume = true`
 - Never create two grant blocks for the same role and object type
-- Apply only via `scripts/stack-apply.sh` — never raw `terraform apply`
-- Never run `terraform destroy`
+- Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
 
 ## Guardrails
 Read `references/guardrails.md` before proceeding -- all safety rules, command format, and stopping points live there.

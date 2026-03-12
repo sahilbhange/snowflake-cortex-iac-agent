@@ -96,6 +96,40 @@ bash scripts/scan-forcenew.sh "$plan_out"
 - `must_change_password = true` for human users with password auth
 - `rsa_public_key` for service accounts — never hardcode key content, use file reference
 
+## Provisioning User (Terraform Account)
+
+⚠️ **The user running Terraform (provisioning account) CAN be managed in state** but with safeguards:
+
+**Identify provisioning user** — check `live/<env>/account.auto.tfvars`:
+```hcl
+provisioning_user = "USERNAME"  # exact Snowflake username case
+```
+
+**Module protection** — `modules/users/main.tf` includes `lifecycle.ignore_changes` for:
+- `rsa_public_key` — prevents auth lockout
+- `password` — preserves credentials
+- `default_namespace` — prevents session disruption
+- `default_secondary_roles_option` — preserves role config
+
+**When importing provisioning user:**
+1. Read `provisioning_user` from `account.auto.tfvars`
+2. Use tfvars key matching EXACT Snowflake username case
+3. Import with: `terraform import ... '<USERNAME>'`
+4. Verify plan shows NO changes to auth fields (ignored by lifecycle)
+
+**tfvars entry for provisioning user** — do NOT include auth fields:
+```hcl
+<PROVISIONING_USER> = {
+  first_name        = "..."
+  last_name         = "..."
+  email             = "..."
+  default_role      = "..."
+  default_warehouse = "..."
+  roles             = [...]
+}
+```
+Note: `rsa_public_key` NOT included — module ignores changes to this field, preserving existing key.
+
 ## Grant Generation
 - One `snowflake_grant_privileges_to_account_role` block per role per object type
 - Consolidate all privileges for same role+object into single block
@@ -103,8 +137,7 @@ bash scripts/scan-forcenew.sh "$plan_out"
 - Use `all_privileges = true` sparingly; prefer explicit privilege lists
 
 ## Constraints
-- Apply only via `scripts/stack-apply.sh` — CoCo outputs the command, user runs it
-- Never run `terraform destroy`
+- Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
 - Validate role name follows `<TEAM>_ROLE` convention before generating
 
 ## Guardrails

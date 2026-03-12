@@ -6,9 +6,10 @@ variable "comment" {
 }
 
 resource "snowflake_schema" "this" {
-  database = var.database
-  name     = var.name
-  comment  = var.comment
+  database     = var.database
+  name         = var.name
+  comment      = var.comment
+  is_transient = false
 }
 
 output "schema_fqn" { value = "${snowflake_schema.this.database}.${snowflake_schema.this.name}" }

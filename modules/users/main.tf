@@ -148,6 +148,15 @@ resource "snowflake_user" "this" {
   must_change_password = lookup(each.value, "must_change_password", false)
   rsa_public_key       = lookup(each.value, "rsa_public_key", null)
   comment              = lookup(each.value, "comment", null)
+
+  lifecycle {
+    ignore_changes = [
+      rsa_public_key,
+      password,
+      default_namespace,
+      default_secondary_roles_option,
+    ]
+  }
 }
 
 resource "snowflake_schema" "workspace" {

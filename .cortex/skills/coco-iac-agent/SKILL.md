@@ -89,13 +89,13 @@ Assistant: Routes to `$coco-iac-agent-new-workload`, reads existing tfvars confi
 User: `$coco-iac-agent add user jsmith, email jsmith@company.com, ANALYST_ROLE, prod`
 Assistant: Routes to `$coco-iac-agent-new-role-user`, validates role hierarchy, generates create_users.tfvars entry, runs plan for account_governance/users.
 
-### Example 3: Drift check (agent -- runs autonomously)
+### Example 3: Drift check
 User: `$coco-iac-agent run drift report for all stacks in stage`
-Assistant: Launches `$coco-iac-agent-drift-report` agent. Agent runs `terraform plan -detailed-exitcode` across all 10 stacks independently, then returns a consolidated per-stack report with HIGH RISK flags -- no manual intervention needed.
+Assistant: Routes to `$coco-iac-agent-drift-report`. Runs `terraform plan -detailed-exitcode` across all 10 stacks autonomously, then returns a consolidated per-stack report with HIGH RISK flags — no manual intervention needed.
 
 ### Example 4: Bootstrap new account
 User: `$coco-iac-agent bootstrap test env for a new Snowflake account`
-Assistant: Launches `$coco-iac-agent-bootstrap-guide` agent. Agent runs pre-flight checks (Terraform version, SnowSQL connectivity, key file, tfvars keys), then hands off to `bootstrap.sh test` with clear run instructions.
+Assistant: Routes to `$coco-iac-agent-bootstrap-guide`. Runs pre-flight checks (Terraform version, SnowSQL connectivity, key file, tfvars keys), then hands off to `bootstrap.sh test` with clear run instructions.
 
 ### Example 5: Plan review
 User: `$coco-iac-agent review this plan [paste output]`
