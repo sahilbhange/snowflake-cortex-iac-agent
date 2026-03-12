@@ -421,6 +421,42 @@ bash scripts/apply-changes.sh test \
 
 ---
 
+## Drift Detection
+
+Detect manual changes and unmanaged objects (shadow IT) across all stacks.
+
+### Run drift report
+
+```
+$coco-iac-agent run drift report for all stacks in test
+```
+
+CoCo runs two phases autonomously:
+1. **Terraform state drift** — `terraform plan -detailed-exitcode` across all 10 stacks
+2. **Unmanaged objects** — queries Snowflake via Snow CLI, compares against terraform state
+
+Returns a consolidated report with HIGH RISK flags for any `# forces replacement` resources.
+
+### Test with seed data
+
+To try drift detection, run the seed SQL to create unmanaged objects in Snowflake:
+
+```bash
+snow sql -c <connection> -f examples/drift_detection_seed.sql
+```
+
+This creates a manual role, warehouse, schema, and user that the drift report will flag. Clean up with the commented-out DROP statements at the bottom of the file.
+
+### Remediation options
+
+| Drift Type | Action |
+|-----------|--------|
+| State drift (config changed outside TF) | Re-apply the stack to reconcile |
+| Unmanaged object (should be in TF) | `$coco-iac-agent onboard <TEAM> in <env>` to generate tfvars, then import |
+| Unmanaged object (test data) | DROP directly in Snowflake |
+
+---
+
 ## Quick Reference
 
 | Task | CoCo Prompt | Stacks Affected |

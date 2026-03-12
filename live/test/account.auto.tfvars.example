@@ -1,0 +1,7 @@
+# Account settings — copy this file to account.auto.tfvars and fill in your values
+organization_name      = "<YOUR_SNOWFLAKE_ORG>"
+account_name           = "<YOUR_SNOWFLAKE_ACCOUNT>"
+provisioning_user      = "<YOUR_PROVISIONING_USER>"
+private_key_path       = "/path/to/snowflake_key.p8"
+private_key_passphrase = "<YOUR_KEY_PASSPHRASE_OR_NULL>"
+snowsql_connection     = "sf_test" # Snow CLI connection name for TEST account (used by stacks 6 and 9)
