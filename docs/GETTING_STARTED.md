@@ -28,8 +28,11 @@ CoCo never runs `terraform apply`. Every apply is explicitly yours.
 | `$coco-iac-agent` | Skill (router) | Entry point — routes to the right skill or agent |
 | `$coco-iac-agent-bootstrap-guide` | **Agent** (non-autonomous) | Pre-flight checks + hands off to bootstrap script, assists with errors |
 | `$coco-iac-agent-drift-report` | **Agent** (autonomous) | Runs all 10 plans independently, returns consolidated drift report |
-| `$coco-iac-agent-new-workload` | Skill | Onboard a team: role + warehouse + schemas + grants |
-| `$coco-iac-agent-new-role-user` | Skill | Add a user, create a role, update RBAC |
+| `$coco-iac-agent-new-workload` | Skill | Onboard a team: role + warehouse + schemas + grants — with NAME PROPOSAL gate |
+| `$coco-iac-agent-new-role-user` | Skill | Add a user, create a role, update RBAC — with NAME PROPOSAL gate |
+| `$coco-iac-agent-account-objects` | Skill | Resource monitors, network rules, external access integrations — with NAME PROPOSAL gate |
+| `$coco-iac-agent-destroy` | Skill | Remove resources safely: checks dependencies + prevent_destroy, runs plan, outputs apply command |
+| `$coco-iac-agent-promote-env` | Skill | Promote validated configs from test → stage or prod with correct env suffix transformation |
 | `$coco-iac-agent-plan-review` | Skill | Risk classification + standards compliance check + go/no-go |
 | `$coco-iac-agent-git-push` | Skill | Generate branch name, commit message, and PR commands after apply |
 
@@ -157,11 +160,12 @@ $coco-iac-agent onboard FINANCE squad in test:
 
 ### CoCo does
 
-1. Reads `live/test/configs/create_role.tfvars` — adds `FINANCE_ANALYST_ROLE_TEST` under SYSADMIN
-2. Reads `create_warehouse.tfvars` — adds `FINANCE_WH_TEST` with `auto_suspend = 60`, `auto_resume = true`
-3. Reads `create_schema.tfvars` — adds the two schemas
-4. Runs `terraform plan` for roles → warehouses → schemas stacks in that order
-5. Returns plan summaries — flags any `# forces replacement`
+1. Proposes names (NAME PROPOSAL table) — waits for your approval before touching any file
+2. Reads `live/test/configs/create_role.tfvars` — adds `FINANCE_ANALYST_ROLE_TEST` under SYSADMIN
+3. Reads `create_warehouse.tfvars` — adds `FINANCE_WH_TEST` with `auto_suspend = 60`, `auto_resume = true`
+4. Reads `create_schema.tfvars` — adds the two schemas
+5. Runs `terraform plan` for roles → warehouses → schemas stacks in that order
+6. Returns plan summaries — flags any `# forces replacement`
 
 ### You do
 
@@ -286,6 +290,74 @@ After the report, you decide:
 
 ---
 
+## Workflow 6 — Remove Resources
+
+Use when a user leaves, a team is decommissioned, or test resources need cleanup.
+
+```
+$coco-iac-agent remove JSMITH user from test
+```
+
+```
+$coco-iac-agent decommission MARKETING squad from test — role, warehouse, schemas
+```
+
+### CoCo does
+
+1. Reads relevant tfvars file(s), locates the entry
+2. Checks for `prevent_destroy = true` — blocks if found
+3. Checks downstream dependencies (users assigned to a role, `granted_roles` references)
+4. Shows the full diff of what will be removed — waits for your confirmation
+5. Removes the entries, runs `terraform plan` to confirm only expected destroys
+6. Flags any unexpected cascade destroys
+7. Outputs apply commands in reverse dependency order
+
+### You do
+
+Review the plan and run each apply command in order:
+```bash
+bash scripts/stack-apply.sh <env> account_governance users    # if users affected
+bash scripts/stack-apply.sh <env> workloads schemas           # if schemas affected
+bash scripts/stack-apply.sh <env> platform warehouses         # if warehouse affected
+bash scripts/stack-apply.sh <env> account_governance roles    # if roles affected
+```
+
+> `stack-apply.sh` will re-run the plan and prompt `[y/N]` before applying each stack.
+
+---
+
+## Workflow 7 — Promote Configs to Production
+
+Use after validating a workload in test and ready to replicate to stage or prod.
+
+```
+$coco-iac-agent promote MARKETING workload from test to prod
+```
+
+### CoCo does
+
+1. Reads source env tfvars for the named resources
+2. Diffs against target env — skips entries that already exist
+3. Transforms env suffixes: `MARKETING_ROLE_TEST` → `MARKETING_ROLE` (prod)
+4. Asks about warehouse sizing for prod (keep same or scale up)
+5. Adds new entries to target env tfvars — never overwrites existing entries
+6. Checks Snowflake for pre-existing objects in target env (avoids ForceNew)
+7. Runs plans for target env stacks
+8. Outputs apply commands for target env
+
+> **Note:** Users are never promoted automatically — credentials are environment-specific. Add users in prod via `$coco-iac-agent-new-role-user`.
+
+### You do
+
+Review plan and run apply commands for the target env:
+```bash
+bash scripts/stack-apply.sh prod account_governance roles
+bash scripts/stack-apply.sh prod platform warehouses
+bash scripts/stack-apply.sh prod workloads schemas
+```
+
+---
+
 ## ForceNew Guardrail
 
 Any plan containing `# forces replacement` on a database, warehouse, or role is HIGH RISK — the resource will be destroyed and recreated, which means data loss for databases and downtime for warehouses.
@@ -401,6 +473,19 @@ $coco-iac-agent onboard <TEAM> squad in <env>:
 
 # New user
 $coco-iac-agent add user: name=<name>, email=<email>, role=<ROLE>, warehouse=<WH>, env=<env>
+
+# Account objects (resource monitors, network rules, EAIs)
+$coco-iac-agent add a monthly 500-credit resource monitor in <env>
+$coco-iac-agent add PyPI egress network rule and wire it to an EAI in <env>
+
+# Remove a single resource
+$coco-iac-agent remove <RESOURCE_NAME> <type> from <env>
+
+# Remove full workload
+$coco-iac-agent decommission <TEAM> squad from <env> — role, warehouse, schemas
+
+# Promote to prod
+$coco-iac-agent promote <TEAM> workload from test to prod
 
 # Plan review (paste plan after)
 $coco-iac-agent-plan-review [plan output]

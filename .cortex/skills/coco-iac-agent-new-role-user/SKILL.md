@@ -9,7 +9,7 @@ tools:
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-11
+- **Last updated:** 2026-03-15
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -46,35 +46,49 @@ FINANCE_ROLE = {
 - User: `name`, `email`, `first_name`, `last_name`
 - `default_role`, `default_warehouse`
 - Roles to assign (list)
-- Workspace schema: yes/no (auto-created in WORKSPACE_DB if yes)
+- Workspace schema: yes/no (auto-created in workspace database if yes)
 - Network policy name (optional)
 
 ## Steps
-1. Read `live/<env>/configs/create_users.tfvars` — match format exactly
-2. Add user entry with all required fields
-3. If new role needed: add to `create_role.tfvars` under SYSADMIN
-4. **REVIEW** — show the tfvars diff, wait for explicit user confirmation before proceeding
+1. **NAME PROPOSAL** — before touching any file, read `references/naming-conventions.md`, scan existing `live/<env>/configs/create_users.tfvars` and `create_role.tfvars` for conflicts, then present:
+   ```
+   ## Name Proposal — <request summary> — <env>
+
+   | Object Type    | Proposed Name        | Convention Applied                   | Conflict |
+   |----------------|----------------------|--------------------------------------|----------|
+   | User login     | jsmith               | lowercase <first initial><last>      | None     |
+   | User object    | JSMITH               | UPPERCASE of login name              | None     |
+   | Functional role| <TEAM>_ROLE[_TEST]   | <TEAM>_ROLE + env suffix (if new)    | None     |
+   | Workspace schema| WORKSPACE_DB.JSMITH | WORKSPACE_DB.<LOGIN_UPPER>           | None     |
+
+   Approve these names, or reply with corrections before I generate any files.
+   ```
+   **GATE: Do not read or edit any tfvars until the user approves names.**
+   Flag `login_name` collisions (two users with same first initial + last name) in the Conflict column.
+2. Read `live/<env>/configs/create_users.tfvars` — match format exactly
+3. Add user entry with all required fields (using approved names)
+4. If new role needed: add to `create_role.tfvars` under SYSADMIN (using approved name)
+5. **REVIEW** — show the tfvars diff, wait for explicit user confirmation before proceeding
 5. **PLAN** — run plan for the affected stacks (always scan for ForceNew):
    ```bash
    plan_out=$(mktemp)
-bash scripts/stack-plan.sh <env> account_governance roles --run 2>&1 | tee "$plan_out"   # if new role added
-bash scripts/scan-forcenew.sh "$plan_out"
+   bash scripts/stack-plan.sh <env> account_governance roles --run 2>&1 | tee "$plan_out"   # if new role added
+   bash scripts/scan-forcenew.sh "$plan_out"
 
-plan_out=$(mktemp)
-bash scripts/stack-plan.sh <env> account_governance users --run 2>&1 | tee "$plan_out"
-bash scripts/scan-forcenew.sh "$plan_out"
+   plan_out=$(mktemp)
+   bash scripts/stack-plan.sh <env> account_governance users --run 2>&1 | tee "$plan_out"
+   bash scripts/scan-forcenew.sh "$plan_out"
    ```
    Present plan summary with RBAC risk notes, wait for approval before applying
-6. **APPLY** — after user confirms plan, apply each stack in dependency order:
+6. **APPLY** — after user confirms plan, output apply commands (never execute):
    ```bash
    bash scripts/stack-apply.sh <env> account_governance roles   # only if new role added
    bash scripts/stack-apply.sh <env> account_governance users
    ```
    Pause between stacks — wait for confirmation before each apply.
 7. **POST-APPLY** — follow `references/workflow.md` Post-Apply Checklist (state check + Snowflake validation).
-9. **COMPLIANCE** — check against Snowflake standards:
+8. **COMPLIANCE** — check against Snowflake standards (naming was pre-approved in NAME PROPOSAL — see `references/naming-conventions.md`):
    - User `login_name` not changed on existing user (ForceNew risk)
-   - Role name follows `<TEAM>_ROLE` pattern
    - Role hierarchy: custom role under SYSADMIN, not ACCOUNTADMIN
    - `default_role` matches assigned role
    - `default_warehouse` matches team warehouse
@@ -91,7 +105,7 @@ bash scripts/scan-forcenew.sh "$plan_out"
 
 ## Key Rules
 - `login_name` is ForceNew — never change on an existing user
-- `workspace_schema_database` must match the top-level var (`WORKSPACE_DB`)
+- `workspace_schema_database` must match the workspace database defined in `create_database.tfvars`
 - Never grant ACCOUNTADMIN to service or functional roles
 - `must_change_password = true` for human users with password auth
 - `rsa_public_key` for service accounts — never hardcode key content, use file reference
@@ -138,10 +152,16 @@ Note: `rsa_public_key` NOT included — module ignores changes to this field, pr
 
 ## Constraints
 - Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
+- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`, `REVOKE`) — output commands for user to run manually
 - Validate role name follows `<TEAM>_ROLE` convention before generating
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding -- all safety rules, command format, and stopping points live there.
+Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
+
+## References
+- `references/naming-conventions.md` — object naming patterns, NAME PROPOSAL format, conflict detection
+- `references/guardrails.md` — safety rules, command format
+- `references/rbac-design.md` — two-layer RBAC model
 
 ## Output
 - Modified `configs/create_users.tfvars` (and `create_role.tfvars` if a new role was added)
@@ -160,4 +180,4 @@ Assistant: Adds ETL_SVC_TEST to create_users.tfvars with rsa_public_key referenc
 
 ### Example 3: New role only
 User: `$coco-iac-agent-new-role-user create REPORTING_ROLE in prod, parent SYSADMIN`
-Assistant: Reads create_role.tfvars, adds REPORTING_ROLE under SYSADMIN. Runs plan for account_governance/roles.
+Assistant: Reads create_role.tfvars, adds REPORTING_ROLE under SYSADMIN. Runs plan for account_governance/roles. Outputs apply command for user to run.

@@ -13,6 +13,26 @@ Single source of truth for all safety rules. All skills read this file — do no
 - Never print or read private key file contents
 - `# forces replacement` on database / warehouse / role = HIGH RISK — pause, explain, wait for explicit instruction
 
+## SQL Safety — ABSOLUTE RULES
+
+- **NEVER execute destructive SQL commands** — output them for the user to run manually
+- Destructive SQL includes: `DROP`, `TRUNCATE`, `DELETE`, `CREATE OR REPLACE`, `ALTER ... DROP`, `REVOKE`
+- **Read-only SQL is allowed**: `SHOW`, `DESCRIBE`, `SELECT`, `EXPLAIN`
+- When drift report suggests removing unmanaged objects, **output the DROP commands** — do not execute them
+- When any skill suggests cleanup SQL, **output as a code block** — user copies and runs
+- This applies to ALL execution methods: `snow sql`, `snowsql`, `snowflake_sql_execute`, or any SQL tool
+
+**Example — correct behavior:**
+```
+Unmanaged role SALES_ROLE detected. To remove it, run:
+
+\`\`\`sql
+DROP ROLE SALES_ROLE;
+\`\`\`
+```
+
+**NEVER run DROP/TRUNCATE/DELETE yourself, even if the user says "yes" or "proceed".**
+
 ## Command Format
 
 ```bash

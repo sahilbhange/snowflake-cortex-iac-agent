@@ -57,16 +57,14 @@ This project is a work in progress. The following improvements are planned to st
 - **SnowSQL escape hatch hardening**: Add retry logic, better error handling, and Snow CLI migration for stacks 6 and 9.
   - *Benefit*: Fewer flaky failures on transient network issues. Better error messages when SnowSQL fails. Snow CLI is actively maintained and has better UX.
 
-- **Multi-account promotion patterns**: Document and automate dev → stage → prod workflows.
-  - *Benefit*: Consistent promotion process — same change flows through all environments. Approval gates prevent accidental prod changes. Full audit trail.
+- ~~**Multi-account promotion patterns**~~ ✅ **Partially shipped** as `coco-iac-agent-promote-env` — promotes validated configs from test → stage/prod with env suffix transformation, warehouse sizing prompts, pre-existing object detection, and plan-before-apply. Full GitOps promotion pipeline (PR-gated) remains future work.
 
 ## Skill Enhancements
 
 - **coco-iac-agent-grants**: Standalone skill for privilege changes without user/role creation.
   - *Benefit*: Day-2 RBAC changes are common but don't need full user/role workflow. Faster, more focused skill for "add SELECT on X to role Y".
 
-- **coco-iac-agent-teardown**: Controlled environment destruction with safety gates and dependency ordering.
-  - *Benefit*: Safe cleanup of test environments. Reverse dependency order prevents orphaned objects. Confirmation prompts prevent accidents.
+- ~~**coco-iac-agent-teardown**~~ ✅ **Shipped** as `coco-iac-agent-destroy` — selective resource removal (user, role, warehouse, schema, full workload) with dependency checks, `prevent_destroy` guard, plan-before-output, and reverse dependency ordering.
 
 - **coco-iac-agent-import**: Import existing Snowflake objects into Terraform state.
   - *Benefit*: Adopt brownfield environments — bring manually-created objects under Terraform control without recreating them. Essential for migrations.
@@ -83,11 +81,22 @@ This project is a work in progress. The following improvements are planned to st
 - **Inline script documentation**: Document `stack-plan.sh` and `scan-forcenew.sh` in skills.
   - *Benefit*: Skills become self-contained — no need to read script source to understand behavior. Reduces context-switching during debugging.
 
-- **Role revocation examples**: Add removal/revoke examples to coco-iac-agent-new-role-user.
-  - *Benefit*: Complete lifecycle coverage — skill handles offboarding, not just onboarding. Operators don't have to figure out revocation manually.
+- ~~**Role revocation examples**~~ ✅ **Shipped** — covered by `coco-iac-agent-destroy` (remove user/role entries from tfvars, dependency checks, plan output).
 
 - **Schemas-only fast path**: Skip roles/warehouses stacks when only adding schemas.
   - *Benefit*: Faster execution for common operation. Adding a schema shouldn't require planning 3 stacks when only 1 changes.
+
+- **coco-iac-agent-provider-upgrade**: Guided skill for upgrading the `snowflakedb/snowflake` provider version (e.g., `~> 2.14` → `~> 2.15`).
+  - *Why needed*: Provider upgrades can introduce breaking attribute changes, deprecated resources, or new required fields. A skill can: read current version across all stack `versions.tf` files, check release notes, flag resource names that changed between versions, run plans across all 10 stacks after bumping the version constraint, and catch ForceNew regressions before apply.
+  - *Benefit*: Safe, auditable upgrades. Prevents "upgrade in one stack, forget the other 9" drift. Catches breaking changes before they hit prod.
+
+- **coco-iac-agent-state-recovery**: Skill for diagnosing and recovering from Terraform state issues — force-unlock, state corruption, lost state, and state sync failures.
+  - *Why needed*: State issues are high-stress, time-sensitive, and easy to make worse. Common scenarios: `Error: state file locked`, corrupted state after a failed apply, state file deleted, or remote backend out of sync. Requires careful commands (`terraform force-unlock`, `terraform state rm`, `terraform state push`) that should never be run blindly.
+  - *Benefit*: Guided recovery with guardrails — explains what happened, what each recovery command does, and what the risk is. Prevents panic-driven commands that make state worse.
+
+- **`.cortex/agents/` directory support**: Move autonomous/non-autonomous skills (`drift-report`, `bootstrap-guide`) to `.cortex/agents/` once CoCo v1.0.28+ confirms agents directory support.
+  - *Current workaround*: All skills live under `.cortex/skills/` regardless of autonomy type.
+  - *Benefit*: Clearer separation between conversational skills and autonomous agents. Proper type classification in `/skill list` output. Enables CoCo to apply different default behaviors (e.g., no confirmation prompts for agents).
 
 ## Skill Quality & Observability
 

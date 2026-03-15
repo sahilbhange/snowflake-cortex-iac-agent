@@ -108,10 +108,10 @@ If the user pastes a plan output, error message, or question during the script r
 
 Flag these proactively when the user reaches the relevant step:
 
-- **Stack 2 (databases):** Confirm `WORKSPACE_DB` appears in the plan — it must exist before users stack (step 3) creates workspace schemas
-- **Stack 3 (users):** Confirm workspace schemas appear per user (e.g., `WORKSPACE_DB.AWONDERLAND`) — if missing, check `create_users.tfvars` has `default_namespace` set
+- **Stack 2 (databases):** Confirm the workspace database (per `create_database.tfvars`) appears in the plan — it must exist before users stack (step 3) creates workspace schemas
+- **Stack 3 (users):** Confirm workspace schemas appear per user — if missing, check `create_users.tfvars` has `default_namespace` set
 - **Stack 6 (storage_integrations_s3) and Stack 9 (external_access_integrations):** Verify `snowsql_connection` is set in `account.auto.tfvars` — these stacks use `local-exec` provisioners that call Snow CLI
-- **Stack 7 (schemas):** Confirm `ADMIN_DB.GOVERNANCE` appears in the plan — network_rules (step 8) depends on this schema existing
+- **Stack 7 (schemas):** Confirm the governance schema (per `create_schema.tfvars`) appears in the plan — network_rules (step 8) depends on this schema existing
 
 ---
 
@@ -155,16 +155,17 @@ Stack sequence for reference (`bootstrap/BOOTSTRAP.md` has full dependency notes
 After the script completes, prompt the user to verify:
 - Log into Snowflake — confirm auto-landing in their workspace schema
 - Warehouses visible with auto-suspend configured
-- Network rules visible in `ADMIN_DB.GOVERNANCE` schema
+- Network rules visible in the governance schema (per `create_schema.tfvars`)
 - Point to `docs/GETTING_STARTED.md` for day-2 operations
 
 ---
 
 ## Hard Rules
-Read `references/guardrails.md` before proceeding.
+Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
 
 Additional rules specific to bootstrap:
 - Never print contents of `*.p8`, `*.pem`, or `account.auto.tfvars`
+- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`, `CREATE OR REPLACE`) — output commands for user to run manually
 - `# forces replacement` on database, warehouse, or role → 🔴 HIGH RISK, always flag
 - Never re-run bootstrap on a live environment with existing state — warn user if they attempt this
 
