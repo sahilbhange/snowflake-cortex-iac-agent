@@ -1,6 +1,6 @@
 # Bootstrap
 
-One-time environment provisioning — applies all 10 stacks in dependency order.
+One-time environment provisioning or onboarding new Snowflake account — applies all 10 stacks in dependency order.
 
 Use bootstrap for a fresh environment. For day-2 changes (add a role, add a user, add a schema), edit the relevant `configs/*.tfvars` and re-apply just that one stack.
 

@@ -199,8 +199,24 @@ After both phases complete, output exactly this structure:
    Reason: <attribute> is ForceNew. Applying will destroy and recreate.
    Action required: Do not apply without explicit human decision.
 
+🔴 HIGH RISK — <stack>: <resource> will be destroyed
+   Reason: Resource removed from tfvars or state mismatch.
+   Action required: Verify this is intentional before applying.
+
+🔴 HIGH RISK — <stack>: <resource> is tainted
+   Reason: Resource marked tainted will be destroyed and recreated on next apply.
+   Action required: Run `terraform untaint` if destruction is not intended.
+
+🟡 MEDIUM RISK — <stack>: <resource> update in-place (sensitive attribute)
+   Reason: Changing <attribute> may disrupt active workloads.
+   Action required: Schedule during maintenance window.
+
 🟡 MEDIUM RISK — X unmanaged objects detected
    These objects are not tracked by Terraform and may cause issues.
+
+✅ COSMETIC — <stack>: <resource> update in-place (metadata only)
+   Reason: Only show_output refresh or default value additions.
+   Action: Safe to apply or ignore.
 
 ### Summary
 - Stacks checked: 10
@@ -288,45 +304,30 @@ terraform -chdir=live/<env>/account_governance/users import 'module.users.snowfl
 terraform -chdir=live/<env>/workloads/schemas import 'module.schema["<SCHEMA_NAME>"].snowflake_schema.this' '"<DATABASE>"."<SCHEMA_NAME>"'
 ```
 
-**Post-Import Validation** ⚠️ **AUTOMATIC** — after ALL imports complete, immediately run:
+**Post-Import Validation** ⚠️ **AUTOMATIC** — after ALL imports complete:
 
-1. **Run plans on all affected stacks** to verify state matches reality:
-   ```bash
-   bash scripts/stack-plan.sh <env> account_governance roles --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
-   bash scripts/stack-plan.sh <env> platform warehouses --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
-   bash scripts/stack-plan.sh <env> workloads schemas --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
-   bash scripts/stack-plan.sh <env> account_governance users --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
-   ```
+Run plans on all affected stacks to verify state matches reality:
+```bash
+bash scripts/stack-plan.sh <env> account_governance roles --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
+bash scripts/stack-plan.sh <env> platform warehouses --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
+bash scripts/stack-plan.sh <env> workloads schemas --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
+bash scripts/stack-plan.sh <env> account_governance users --run 2>&1 | grep -E "(Plan:|to add|to change|to destroy|No changes|# forces replacement)"
+```
 
-2. **Interpret results:**
-   | Plan Output | Status | Action |
-   |-------------|--------|--------|
-   | `No changes` | ✅ Perfect | Import successful, state matches Snowflake |
-   | `X to change` (no destroy) | ⚠️ Config drift | Safe to apply — tfvars differ from Snowflake config |
-   | `X to add` (grants/schemas) | ⚠️ Expected | Related resources need creation (role grants, workspace schemas) |
-   | `X to destroy` or `forces replacement` | 🔴 HIGH RISK | DO NOT APPLY — investigate mismatch |
+Interpret and report:
 
-3. **Report validation summary:**
-   ```
-   ## Post-Import Validation
+| Plan Output | Status | Action |
+|-------------|--------|--------|
+| `No changes` | ✅ Perfect | Import successful |
+| `X to change` (no destroy) | ⚠️ Config drift | Safe — tfvars differ from Snowflake config |
+| `X to add` (grants/schemas) | ⚠️ Expected | Related resources need creation |
+| `X to destroy` or `forces replacement` | 🔴 HIGH RISK | DO NOT APPLY — investigate mismatch |
 
-   | Stack | Plan Result | Status |
-   |-------|-------------|--------|
-   | roles | 0 add, 0 change, 0 destroy | ✅ Clean |
-   | warehouses | 0 add, 2 change, 0 destroy | ⚠️ Config drift (safe) |
-   | schemas | 1 destroy (forces replacement) | 🔴 HIGH RISK |
-   | users | 4 add, 0 change, 0 destroy | ⚠️ Expected (workspace schemas) |
+If ForceNew detected: stop and ask user whether to fix tfvars/module or accept destroy/recreate.
 
-   ### Issues Found
-   - 🔴 SALES_MART schema: `is_transient` forces replacement — fix module or accept data loss
-   ```
-
-4. **If ForceNew detected**: Stop and ask user whether to:
-   - Fix tfvars/module to match existing Snowflake config
-   - Accept destroy/recreate (only if data loss is acceptable)
-
-- Option B (only for test/temp objects): Delete if not needed:
+- Option B (only for test/temp objects): Output DROP commands for user to run manually:
   ```sql
+  -- Copy and run these commands yourself (CoCo will NOT execute them):
   DROP ROLE <name>;
   DROP WAREHOUSE <name>;
   DROP USER <name>;
@@ -335,10 +336,27 @@ terraform -chdir=live/<env>/workloads/schemas import 'module.schema["<SCHEMA_NAM
 ```
 
 ## Hard Rules
+Read `references/guardrails.md` before proceeding.
+
+Additional rules for drift report:
 - Never run `terraform apply` or `terraform destroy`
-- SQL via `snow sql` is **read-only**: only `SHOW`, `DESCRIBE`, and `SELECT` queries are allowed — never run DDL (`CREATE`, `ALTER`, `DROP`, `GRANT`, `REVOKE`) or DML (`INSERT`, `UPDATE`, `DELETE`)
+- SQL via `snow sql` is **read-only**: only `SHOW`, `DESCRIBE`, and `SELECT` queries are allowed — never run DDL (`CREATE`, `ALTER`, `DROP`, `GRANT`, `REVOKE`) or DML (`INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`)
+- **NEVER execute DROP commands** — when suggesting removal of unmanaged objects, **output the DROP SQL as a code block** for the user to copy and run manually
 - Never print contents of `*.p8`, `*.pem`, or `account.auto.tfvars`
 - `# forces replacement` on database, warehouse, or role → always flag as 🔴 HIGH RISK
+- `will be destroyed` → always flag as 🔴 HIGH RISK
+- `is tainted` in state → always flag as 🔴 HIGH RISK
 - If a stack errors on init, skip the plan for that stack and record the error; continue to next stack
 - Do not stop on drift — run all checks regardless and report at the end
 - Always run Phase 2 (unmanaged objects) even if Phase 1 shows no drift
+
+---
+
+## Risk Classification
+
+Use `$coco-iac-agent-plan-review` for the authoritative risk classification tables and detection patterns.
+
+For inline drift flagging, apply these quick rules:
+- `# forces replacement` / `will be destroyed` / `is tainted` / `must be replaced` / `-/+` → 🔴 HIGH RISK
+- `show_output` / `disable_mfa` / `mins_to_bypass_mfa` / `mins_to_unlock` / `comment` changes → ✅ COSMETIC
+- Everything else → 🟡 MEDIUM — flag for review

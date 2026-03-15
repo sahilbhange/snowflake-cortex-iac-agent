@@ -101,20 +101,33 @@ terraform -chdir=live/<env>/workloads/schemas import 'module.schema["<SCHEMA_NAM
 **NEVER recreate existing objects** — this destroys data, breaks grants, and locks out users.
 
 ## Steps
-1. Read existing `live/<env>/configs/create_role.tfvars` — follow format exactly
-2. Add any new **access roles** the team needs (e.g. `FINANCE_READ`, `FINANCE_WRITE`) under SYSADMIN
-3. Add the **functional role** (`<TEAM>_ROLE`) with `granted_roles` pointing to the appropriate access roles
-4. Read `create_warehouse.tfvars` — add warehouse with `auto_suspend` and `auto_resume`
-5. Read `create_schema.tfvars` — add schemas with correct database and naming
-6. **Validate before plan:**
-   - Access roles follow `<LAYER>_<PERMISSION>` naming
-   - Functional role follows `<TEAM>_ROLE` pattern
+1. **NAME PROPOSAL** — before touching any file, read `references/naming-conventions.md`, scan existing `live/<env>/configs/create_role.tfvars`, `create_warehouse.tfvars`, and `create_schema.tfvars` for conflicts, then present:
+   ```
+   ## Name Proposal — <TEAM> squad — <env>
+
+   | Object Type       | Proposed Name          | Convention Applied          | Env Suffix    | Conflict |
+   |-------------------|------------------------|-----------------------------|---------------|----------|
+   | Access role (read)| <TEAM>_READ            | <OBJECT>_READ               | No (shared)   | None     |
+   | Access role (write)| <TEAM>_WRITE          | <OBJECT>_WRITE              | No (shared)   | None     |
+   | Functional role   | <TEAM>_ROLE[_TEST]     | <TEAM>_ROLE + suffix        | Yes           | None     |
+   | Warehouse         | <TEAM>_WH[_TEST]       | <TEAM>_WH + suffix          | Yes           | None     |
+   | Schema            | <DB>.<PURPOSE>[_TEST]  | purpose-based in target DB  | Yes           | None     |
+
+   Approve these names, or reply with corrections before I generate any files.
+   ```
+   **GATE: Do not read or edit any tfvars until the user approves names.**
+   Also flag: if an existing access role already covers what the team needs (e.g. `RAW_READ`), note it — do not propose a duplicate.
+2. Read existing `live/<env>/configs/create_role.tfvars` — follow format exactly
+3. Add any new **access roles** (using approved names) — reuse existing access roles where possible; only create a new one if no equivalent exists
+4. Add the **functional role** (`<TEAM>_ROLE`) with `granted_roles` pointing to the appropriate access roles
+5. Read `create_warehouse.tfvars` — add warehouse with `auto_suspend` and `auto_resume`
+6. Read `create_schema.tfvars` — add schemas with correct database and naming
+7. **Validate before plan:**
    - Functional role uses `granted_roles` — no direct privilege grants on functional role
-   - All object names UPPERCASE
-   - Env suffix applied: `_TEST` in test, `_STAGE` in stage, none in prod
    - No duplicate grant blocks for same role+object type
-7. **REVIEW** — show all tfvars diffs, wait for explicit user confirmation before proceeding
-8. **PLAN** — run plans for `roles`, `warehouses`, `schemas` stacks in order (always scan for ForceNew):
+   - Naming already pre-approved in NAME PROPOSAL — see `references/naming-conventions.md` to re-check if needed
+8. **REVIEW** — show all tfvars diffs, wait for explicit user confirmation before proceeding
+9. **PLAN** — run plans for `roles`, `warehouses`, `schemas` stacks in order (always scan for ForceNew):
    ```bash
    plan_out=$(mktemp)
 bash scripts/stack-plan.sh <env> account_governance roles --run 2>&1 | tee "$plan_out"
@@ -129,7 +142,7 @@ bash scripts/stack-plan.sh <env> workloads schemas --run 2>&1 | tee "$plan_out"
 bash scripts/scan-forcenew.sh "$plan_out"
    ```
    Present each plan summary, wait for approval before applying
-9. **APPLY** — output apply commands in dependency order, wait for user to confirm completion:
+10. **APPLY** — output apply commands in dependency order, wait for user to confirm completion:
    ```bash
    bash scripts/stack-apply.sh <env> account_governance roles
    bash scripts/stack-apply.sh <env> platform warehouses
@@ -140,14 +153,14 @@ bash scripts/scan-forcenew.sh "$plan_out"
     - **State check**: `terraform -chdir=<stack> state list | grep <resource>` for each affected stack
     - **Snowflake validation**: Run `SHOW ROLES/WAREHOUSES/SCHEMAS/USERS LIKE '<name>'` to confirm objects exist
     - Do NOT ask "what's next?" — proceed directly to compliance check
-11. **COMPLIANCE** — run compliance checks based on resources created:
+11. **COMPLIANCE** — run compliance checks based on resources created (naming was pre-approved in NAME PROPOSAL — see `references/naming-conventions.md`):
 
-    | Resource Type | Applicable Checks |
+    | Resource Type | Non-naming Checks |
     |---------------|-------------------|
-    | Roles | UPPERCASE naming, `<LAYER>_<PERMISSION>` or `<TEAM>_ROLE` pattern, parent under SYSADMIN, `granted_roles` pattern, provider v2.x, no ACCOUNTADMIN grants |
-    | Warehouses | UPPERCASE naming, `auto_suspend` ≤60s, `auto_resume = true` |
-    | Schemas | UPPERCASE naming, owner is SYSADMIN |
-    | Users | UPPERCASE naming, functional role assigned (not access role), no ACCOUNTADMIN grants |
+    | Roles | Parent under SYSADMIN, `granted_roles` wiring, provider v2.x (`snowflake_account_role`), no ACCOUNTADMIN grants |
+    | Warehouses | `auto_suspend` ≤60s, `auto_resume = true` |
+    | Schemas | Owner is SYSADMIN |
+    | Users | Functional role assigned (not access role), no ACCOUNTADMIN grants |
 
     Full workload onboarding runs all checks. Partial operations (schema-only, user-only) run only applicable checks.
 12. **SUMMARY** — generate formatted change report:
@@ -160,9 +173,8 @@ bash scripts/scan-forcenew.sh "$plan_out"
     > "Config files have been updated. Run `$coco-iac-agent-git-push` to generate the branch, commit message, and PR commands for these changes."
 
 ## Naming Rules
-- Apply env suffix: `MARKETING_ROLE_TEST` in test, `MARKETING_ROLE_STAGE` in stage, `MARKETING_ROLE` in prod
-- All Snowflake object names UPPERCASE; tfvars keys UPPERCASE too
-- Schema name without `_SCHEMA` suffix — module appends that pattern
+See `references/naming-conventions.md` — canonical source for all patterns, env suffix rules, derivation logic, and conflict detection.
+Key reminder: schema names have no `_SCHEMA` suffix — the module appends it.
 
 ## Constraints
 - Access roles are never assigned directly to users
@@ -171,9 +183,15 @@ bash scripts/scan-forcenew.sh "$plan_out"
 - Warehouse must have `auto_suspend` (default 60s) and `auto_resume = true`
 - Never create two grant blocks for the same role and object type
 - Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
+- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`) — output commands for user to run manually
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding -- all safety rules, command format, and stopping points live there.
+Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
+
+## References
+- `references/naming-conventions.md` — object naming patterns, NAME PROPOSAL format, conflict detection
+- `references/guardrails.md` — safety rules, command format
+- `references/rbac-design.md` — two-layer RBAC model
 
 ## Output
 - Modified `configs/create_role.tfvars`, `create_warehouse.tfvars`, `create_schema.tfvars` (as applicable)

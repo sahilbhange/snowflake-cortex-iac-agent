@@ -91,15 +91,19 @@ snowflake-cortex-iac-agent/
 │       ├── coco-iac-agent-new-role-user/      ← add users / RBAC changes
 │       ├── coco-iac-agent-plan-review/        ← risk classification + compliance check
 │       ├── coco-iac-agent-bootstrap-guide/    ← non-autonomous: pre-flight + script handoff
-│       └── coco-iac-agent-drift-report/       ← autonomous: runs all 10 plans, consolidated report
+│       ├── coco-iac-agent-drift-report/       ← autonomous: runs all 10 plans, consolidated report
+│       ├── coco-iac-agent-account-objects/    ← skill: resource monitors, network rules, external access integrations
+│       ├── coco-iac-agent-destroy/            ← remove resources safely (user, role, WH, schema, workload)
+│       ├── coco-iac-agent-promote-env/        ← promote validated configs from test → stage/prod
+│       └── coco-iac-agent-git-push/           ← generate branch + commit + PR after apply
 │
 ├── references/                   ← domain knowledge (read by CoCo, useful for humans)
 │   ├── guardrails.md             ← safety rules, command format, skill routing enforcement
 │   ├── stack-mapping.md          ← execution order, provider aliases, env naming
 │   ├── hcl-patterns.md           ← copy-paste HCL blocks for every resource type
 │   ├── rbac-design.md            ← two-layer RBAC model, access role table, privilege matrix
+│   ├── naming-conventions.md    ← all object naming patterns, conflict detection, NAME PROPOSAL format
 │   ├── workflow.md               ← plan-only contract, ForceNew rules
-│   ├── prompt-examples.md        ← example CoCo invocations
 │   └── architecture.mmd          ← provider/module dependency diagram (Mermaid)
 │
 └── docs/                         ← user guides
@@ -261,9 +265,13 @@ automatically when CoCo starts in this repo. For install instructions see
 | Skill / Agent | Type | Purpose |
 |---|---|---|
 | `$coco-iac-agent` | Skill (router) | Entry point — routes to the right skill or agent |
-| `$coco-iac-agent-new-workload` | Skill | Role + warehouse + schemas for a new team |
-| `$coco-iac-agent-new-role-user` | Skill | Add users, create roles, update RBAC |
+| `$coco-iac-agent-new-workload` | Skill | Role + warehouse + schemas for a new team — with NAME PROPOSAL gate |
+| `$coco-iac-agent-new-role-user` | Skill | Add users, create roles, update RBAC — with NAME PROPOSAL gate |
+| `$coco-iac-agent-account-objects` | Skill | Resource monitors, network rules, external access integrations — with NAME PROPOSAL gate |
+| `$coco-iac-agent-destroy` | Skill | Remove resources safely — dependency checks, prevent_destroy guard, plan before output |
+| `$coco-iac-agent-promote-env` | Skill | Promote validated configs from test → stage/prod with suffix transformation |
 | `$coco-iac-agent-plan-review` | Skill | Risk classification + standards compliance check |
+| `$coco-iac-agent-git-push` | Skill | Generate branch name, commit message, and PR commands after apply |
 | `$coco-iac-agent-drift-report` | Agent (autonomous) | Runs all 10 plans, returns consolidated report |
 | `$coco-iac-agent-bootstrap-guide` | Agent (non-autonomous) | Pre-flight checks + bootstrap script handoff |
 

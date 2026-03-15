@@ -18,6 +18,7 @@ Covers: generate → plan → apply → validate → summary.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
+│  0. NAME PROPOSAL  CoCo proposes names, user approves        │
 │  1. GENERATE       CoCo generates tfvars changes            │
 │  2. REVIEW         Review the diff, confirm changes          │
 │  3. PLAN           Run terraform plan for each stack         │
@@ -28,6 +29,30 @@ Covers: generate → plan → apply → validate → summary.
 │  8. SUMMARY        CoCo generates a change report            │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Step 0 — Name Proposal
+
+Before generating any tfvars, every creation skill (`new-workload`, `new-role-user`, `account-objects`) reads `references/naming-conventions.md`, scans existing configs for conflicts, and presents a name proposal table:
+
+```
+## Name Proposal — GROWTH squad — test
+
+| Object Type        | Proposed Name       | Convention Applied      | Env Suffix  | Conflict |
+|--------------------|---------------------|-------------------------|-------------|----------|
+| Access role (read) | GROWTH_READ         | <OBJECT>_READ           | No (shared) | None     |
+| Functional role    | GROWTH_ROLE_TEST    | <TEAM>_ROLE + _TEST     | Yes         | None     |
+| Warehouse          | GROWTH_WH_TEST      | <TEAM>_WH + _TEST       | Yes         | None     |
+| Schema             | ANALYTICS_DB.GROWTH_MART_TEST | purpose-based | Yes      | None     |
+
+Approve these names, or reply with corrections before I generate any files.
+```
+
+**The skill will not read or modify any tfvars until you approve (or correct) the proposed names.**
+This is the primary naming guardrail — catches convention violations and conflicts before any file is touched.
+
+See `references/naming-conventions.md` for the full naming rules, derivation logic, and common mistake flags.
 
 ---
 
@@ -465,6 +490,12 @@ This creates a manual role, warehouse, schema, and user that the drift report wi
 | Add user (existing role) | `$coco-iac-agent add user <name> to <ROLE>` | users |
 | Add schemas only | `$coco-iac-agent add schemas in <DB>` | schemas |
 | Add role only | `$coco-iac-agent create <ROLE> in <env>` | roles |
+| Add resource monitor | `$coco-iac-agent add monthly credit monitor in <env>` | platform/resource_monitors |
+| Add network rule | `$coco-iac-agent add PyPI egress network rule in <env>` | platform/network_rules |
+| Add external access integration | `$coco-iac-agent add PyPI access integration in <env>` | platform/external_access_integrations |
+| Remove a resource | `$coco-iac-agent remove <NAME> from <env>` | varies (reverse order) |
+| Decommission full workload | `$coco-iac-agent decommission <TEAM> from <env>` | roles, warehouses, schemas, users |
+| Promote configs to prod | `$coco-iac-agent promote <TEAM> from test to prod` | roles, warehouses, schemas |
 | Check drift | `$coco-iac-agent-drift-report for <env>` | all stacks (read-only) |
 | Review plan output | `$coco-iac-agent-plan-review` + paste plan | — |
 | Push changes to Git after apply | `$coco-iac-agent-git-push` | — |

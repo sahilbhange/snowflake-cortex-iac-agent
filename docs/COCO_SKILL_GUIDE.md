@@ -341,12 +341,15 @@ Keeps each context window lean — only the relevant instructions are loaded.
 
 ```
 .cortex/
-├── skills/
-│   ├── coco-iac-agent/              ← parent router
-│   ├── coco-iac-agent-new-workload/ ← skill: onboard team (role + WH + schemas)
-│   ├── coco-iac-agent-new-role-user/← skill: add user, RBAC changes
-│   └── coco-iac-agent-plan-review/  ← skill: risk classification + standards compliance
-└── agents/
+└── skills/
+    ├── coco-iac-agent/                  ← parent router
+    ├── coco-iac-agent-new-workload/     ← skill: onboard team (role + WH + schemas) — NAME PROPOSAL gate
+    ├── coco-iac-agent-new-role-user/    ← skill: add user, RBAC changes — NAME PROPOSAL gate
+    ├── coco-iac-agent-account-objects/  ← skill: resource monitors, network rules, EAIs — NAME PROPOSAL gate
+    ├── coco-iac-agent-destroy/          ← skill: remove resources safely (dependency checks, prevent_destroy guard)
+    ├── coco-iac-agent-promote-env/      ← skill: promote configs test → stage/prod with env suffix transformation
+    ├── coco-iac-agent-plan-review/      ← skill: risk classification + standards compliance
+    ├── coco-iac-agent-git-push/         ← skill: generate branch + commit + PR after apply
     ├── coco-iac-agent-drift-report/     ← autonomous: runs all 10 plans, returns report
     └── coco-iac-agent-bootstrap-guide/  ← non-autonomous: pre-flight checks + bootstrap script handoff
 ```
@@ -355,7 +358,13 @@ Keeps each context window lean — only the relevant instructions are loaded.
 
 **Why bootstrap-guide is a non-autonomous agent:** runs pre-flight checks autonomously, then hands off to `bootstrap/bootstrap.sh` which handles the 10-stack orchestration with human-gated applies. Stays available to assist with errors during the script run.
 
-**Why new-workload, new-role-user, plan-review are skills:** each is a focused single operation. Conversational, no multi-step autonomous execution needed.
+**Why new-workload, new-role-user, account-objects, destroy, promote-env, plan-review, git-push are skills:** each is a focused single operation. Conversational, no multi-step autonomous execution needed.
+
+**NAME PROPOSAL gate** (in `new-workload`, `new-role-user`, `account-objects`): before generating any tfvars, the skill reads `references/naming-conventions.md`, scans existing configs for conflicts, and presents proposed object names in a table. No files are touched until the user approves the names.
+
+**Why destroy is a skill, not autonomous:** resource removal is irreversible. The skill requires explicit human confirmation of the tfvars diff before editing files, and again via `[y/N]` in `stack-apply.sh` before applying.
+
+**Why promote-env is a skill, not autonomous:** promoting to prod is a high-stakes operation. Plan review and warehouse sizing decisions require human judgement per environment.
 
 ---
 
@@ -376,12 +385,16 @@ Commit `.cortex/` to git and every teammate gets the skills.
 mkdir -p ~/.snowflake/cortex/skills ~/.snowflake/cortex/agents
 BASE="/path/to/this/repo/.cortex"
 
-ln -sf "$BASE/skills/coco-iac-agent"               ~/.snowflake/cortex/skills/
-ln -sf "$BASE/skills/coco-iac-agent-new-workload"   ~/.snowflake/cortex/skills/
-ln -sf "$BASE/skills/coco-iac-agent-new-role-user"  ~/.snowflake/cortex/skills/
-ln -sf "$BASE/skills/coco-iac-agent-plan-review"    ~/.snowflake/cortex/skills/
-ln -sf "$BASE/agents/coco-iac-agent-drift-report"   ~/.snowflake/cortex/agents/
-ln -sf "$BASE/agents/coco-iac-agent-bootstrap-guide" ~/.snowflake/cortex/agents/
+ln -sf "$BASE/skills/coco-iac-agent"                  ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-new-workload"     ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-new-role-user"    ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-account-objects"  ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-destroy"          ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-promote-env"      ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-plan-review"      ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-git-push"         ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-drift-report"     ~/.snowflake/cortex/skills/
+ln -sf "$BASE/skills/coco-iac-agent-bootstrap-guide"  ~/.snowflake/cortex/skills/
 ```
 
 **Path-with-spaces workaround:** If your repo path contains spaces, symlinks through `~/cortex-skills/` avoid CoCo's directory input breaking:
@@ -414,6 +427,9 @@ Verify: run `/skill list` in a CoCo session — all skills should appear.
 | Onboard a team | `$coco-iac-agent onboard MARKETING team in test` |
 | Add a user | `$coco-iac-agent add user jsmith to ANALYST_ROLE in test` |
 | Create a role | `$coco-iac-agent create DATA_ENG_ROLE in test` |
+| Remove a user | `$coco-iac-agent remove JSMITH user from test` |
+| Decommission a workload | `$coco-iac-agent decommission MARKETING squad from test` |
+| Promote to prod | `$coco-iac-agent promote MARKETING workload from test to prod` |
 | Check drift | `$coco-iac-agent-drift-report for test env` |
 | Review a plan | `$coco-iac-agent-plan-review` + paste plan output |
 | Bootstrap new env | `$coco-iac-agent bootstrap prod` |

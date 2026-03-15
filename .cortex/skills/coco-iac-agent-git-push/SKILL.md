@@ -146,6 +146,9 @@ After outputting commands, add:
 > ```
 
 ## Rules
+Read `references/guardrails.md` before proceeding.
+
+Additional rules for git push:
 - **Never push directly to `main`** — always branch + PR
 - **Stage specific files** — never `git add .` blindly (avoids committing `.terraform/`, state files, or secrets)
 - **One logical change per branch** — if multiple workloads changed in one session, split into separate branches
