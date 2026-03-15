@@ -13,6 +13,29 @@ Single source of truth for all safety rules. All skills read this file — do no
 - Never print or read private key file contents
 - `# forces replacement` on database / warehouse / role = HIGH RISK — pause, explain, wait for explicit instruction
 
+## Git Safety — ABSOLUTE RULES
+
+- **NEVER execute `git commit`, `git push`, or `gh pr create`** — output commands for user to run
+- **NEVER push directly to `main`** — always branch + PR
+- **NEVER run `git add .`** — stage specific files only (avoids committing secrets, state files)
+- For any commit/push/PR workflow: output the exact commands as a code block, stop, user runs them
+- This applies to ALL skills — any change that needs to be committed follows this pattern
+
+**Example — correct behavior:**
+```
+To commit and push these changes:
+
+\`\`\`bash
+git checkout -b feat/test-add-marketing-workload
+git add live/test/configs/create_role.tfvars
+git commit -m "feat(configs): add MARKETING_ROLE in test"
+git push -u origin feat/test-add-marketing-workload
+gh pr create --title "feat(configs): add MARKETING_ROLE" --body "..."
+\`\`\`
+```
+
+**NEVER run git commit/push yourself, even if the user says "yes" or "proceed".**
+
 ## SQL Safety — ABSOLUTE RULES
 
 - **NEVER execute destructive SQL commands** — output them for the user to run manually
