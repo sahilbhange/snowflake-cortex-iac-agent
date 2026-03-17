@@ -106,9 +106,10 @@ FINANCE_ROLE = {
 ## Key Rules
 - `login_name` is ForceNew — never change on an existing user
 - `workspace_schema_database` must match the workspace database defined in `create_database.tfvars`
-- Never grant ACCOUNTADMIN to service or functional roles
 - `must_change_password = true` for human users with password auth
 - `rsa_public_key` for service accounts — never hardcode key content, use file reference
+
+All other safety/naming/RBAC rules enforced via `cortex ctx` rules.
 
 ## Provisioning User (Terraform Account)
 
@@ -151,12 +152,11 @@ Note: `rsa_public_key` NOT included — module ignores changes to this field, pr
 - Use `all_privileges = true` sparingly; prefer explicit privilege lists
 
 ## Constraints
-- Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
-- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`, `REVOKE`) — output commands for user to run manually
-- Validate role name follows `<TEAM>_ROLE` convention before generating
+Safety, naming, RBAC, and workflow rules are enforced via `cortex ctx` rules.
+Run `cortex ctx rule list` to review. See `docs/RULES_REFERENCE.md` for the full catalog.
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
+See `cortex ctx` rules — replaces `references/guardrails.md` for behavioral enforcement.
 
 ## References
 - `references/naming-conventions.md` — object naming patterns, NAME PROPOSAL format, conflict detection

@@ -177,16 +177,11 @@ See `references/naming-conventions.md` — canonical source for all patterns, en
 Key reminder: schema names have no `_SCHEMA` suffix — the module appends it.
 
 ## Constraints
-- Access roles are never assigned directly to users
-- Functional roles must use `granted_roles` to compose access roles — no direct privilege grants
-- Role must be parented under SYSADMIN — never ACCOUNTADMIN
-- Warehouse must have `auto_suspend` (default 60s) and `auto_resume = true`
-- Never create two grant blocks for the same role and object type
-- Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
-- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`) — output commands for user to run manually
+Safety, naming, RBAC, and workflow rules are enforced via `cortex ctx` rules.
+Run `cortex ctx rule list` to review. See `docs/RULES_REFERENCE.md` for the full catalog.
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
+See `cortex ctx` rules — replaces `references/guardrails.md` for behavioral enforcement.
 
 ## References
 - `references/naming-conventions.md` — object naming patterns, NAME PROPOSAL format, conflict detection

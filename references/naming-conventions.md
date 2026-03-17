@@ -1,23 +1,7 @@
 # Naming Conventions
 
-Single source of truth for all Snowflake object names in this repo.
-All creation skills (`new-workload`, `new-role-user`, `account-objects`) read this file
-during the **NAME PROPOSAL** step — before generating any tfvars content.
-
----
-
-## Universal Rules
-
-- All Snowflake object names **UPPERCASE**
-- Terraform resource labels **snake_case** (derived from object name)
-- Apply env suffix in non-prod environments:
-  - `_TEST` in `live/test/`
-  - `_STAGE` in `live/stage/`
-  - No suffix in `live/prod/`
-- Access roles are **account-level shared objects** — no env suffix because they define data-layer privileges consistent across environments
-- ⚠️ This assumes a **single Snowflake account** serving all environments. If using separate accounts per env, access roles would need env suffixes.
-- **Exception**: User login names may use lowercase for readability (`jsmith`), but Snowflake stores them as UPPERCASE internally
-- No spaces, no special characters except underscore
+Derivation rules, conflict detection, and NAME PROPOSAL format for all Snowflake objects.
+Universal naming rules (UPPERCASE, env suffixes, patterns) are enforced via `cortex ctx` rules — run `cortex ctx rule list` to review.
 
 ---
 

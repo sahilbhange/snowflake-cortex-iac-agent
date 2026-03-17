@@ -222,15 +222,14 @@ terraform -chdir=live/<env>/platform/external_access_integrations import \
 See `references/naming-conventions.md` — canonical source for all patterns, env suffix rules, conflict detection, and the NAME PROPOSAL table format.
 
 ## Constraints
-- Never run `terraform apply` or `terraform destroy` — output `scripts/stack-apply.sh` command for the user to run manually
-- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`, `CREATE OR REPLACE`) — output commands for user to run manually
-- Network rules must live in `ADMIN_DB.GOVERNANCE` — never in a workload or user-owned schema
-- EAI `allowed_network_rules` must reference fully-qualified names: `"DB.SCHEMA.RULE_NAME"` — not just the rule name
+- EAI `allowed_network_rules` must reference fully-qualified names: `"DB.SCHEMA.RULE_NAME"`
 - `start_timestamp` on resource monitors must be a future datetime — if unknown, leave commented
-- If EAI plan shows destroy/recreate on an existing integration, stop — flag SnowSQL escape hatch before proceeding
+- If EAI plan shows destroy/recreate on an existing integration, stop — flag SnowSQL escape hatch
+
+All other safety/naming rules enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding — all safety rules, command format, and stopping points live there.
+See `cortex ctx` rules — replaces `references/guardrails.md` for behavioral enforcement.
 
 ## References
 - `references/naming-conventions.md` — object naming patterns, NAME PROPOSAL format, conflict detection

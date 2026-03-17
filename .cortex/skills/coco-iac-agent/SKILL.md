@@ -13,7 +13,8 @@ tools:
 # Snowflake Terraform Provisioner
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding — all safety rules (Terraform + SQL), command format, and skill routing enforcement live there.
+Safety, naming, RBAC, and workflow rules are enforced via `cortex ctx` rules (persistent across sessions).
+Run `cortex ctx rule list` to review active rules. See `docs/RULES_REFERENCE.md` for the full catalog.
 
 ## When to Use
 - Onboarding a new team or squad (role + warehouse + schemas)
@@ -25,8 +26,8 @@ Read `references/guardrails.md` before proceeding — all safety rules (Terrafor
 - First-time provisioning of a Snowflake environment from scratch
 
 ## Domain Rules
-See `references/hcl-patterns.md` for naming conventions, provider aliases, resource patterns, and NEVER/ALWAYS rules.
-See `references/rbac-design.md` for the two-layer RBAC model, access role table, and privilege matrix.
+See `references/hcl-patterns.md` for HCL templates and `references/rbac-design.md` for the two-layer RBAC model.
+Behavioral rules (naming, safety, RBAC constraints) are in `cortex ctx` rules.
 
 ## Mental Model
 - CoCo generates, plans, and shows output. Human runs apply.

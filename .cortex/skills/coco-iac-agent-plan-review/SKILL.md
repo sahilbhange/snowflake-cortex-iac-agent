@@ -20,7 +20,8 @@ tools:
 - After a drift report surfaces unexpected changes
 
 ## Guardrails
-Read `references/guardrails.md` before proceeding -- all safety rules, command format, and stopping points live there.
+Safety, naming, RBAC, and workflow rules are enforced via `cortex ctx` rules.
+Run `cortex ctx rule list` to review. See `docs/RULES_REFERENCE.md` for the full catalog.
 
 ## Output
 - **Section 1:** Risk classification table — resource, operation, risk level (🔴/🟡/🟢), reason

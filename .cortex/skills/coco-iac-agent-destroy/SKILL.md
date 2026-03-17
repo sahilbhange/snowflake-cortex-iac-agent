@@ -132,15 +132,14 @@ Expected: empty result.
 ---
 
 ## Constraints
-- NEVER run `terraform apply` or `terraform destroy`
-- NEVER run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`) — output commands for user to run manually
 - NEVER remove provisioning user or TERRAFORM_ROLE
 - NEVER proceed past Step 3 without explicit user confirmation
-- Always run plan after tfvars edit
 - Resource removal is done via Terraform (remove tfvars entry → plan → user runs apply), NOT via direct SQL
 
+All other safety rules enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.
+
 ## Guardrails
-Read `references/guardrails.md` before proceeding — includes SQL safety rules.
+See `cortex ctx` rules — replaces `references/guardrails.md` for behavioral enforcement.
 
 ---
 

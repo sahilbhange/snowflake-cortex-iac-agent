@@ -135,17 +135,14 @@ snow sql -q "SHOW ROLES LIKE '<pattern>';" -c "$CONNECTION"
 ---
 
 ## Key Rules
-
 - **Never overwrite existing target entries** — only add new
 - **Never promote user entries** — always manual via `$coco-iac-agent-new-role-user`
-- **Never apply without plan review**
-- **Never run destructive SQL** (`DROP`, `TRUNCATE`, `DELETE`) — output commands for user to run manually
-- **Env suffixes must be correct** — `_TEST` in test, none in prod
-- **Always check for pre-existing objects** — import before apply if needed
 - **Promotion = configs only** — data, query history, grants to external objects are not promoted
 
+All other safety/naming rules enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.
+
 ## Guardrails
-Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
+See `cortex ctx` rules — replaces `references/guardrails.md` for behavioral enforcement.
 
 ---
 
