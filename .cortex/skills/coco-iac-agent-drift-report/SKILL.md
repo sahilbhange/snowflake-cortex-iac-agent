@@ -336,16 +336,11 @@ If ForceNew detected: stop and ask user whether to fix tfvars/module or accept d
 ```
 
 ## Hard Rules
-Read `references/guardrails.md` before proceeding.
+Safety rules are enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.
 
 Additional rules for drift report:
-- Never run `terraform apply` or `terraform destroy`
-- SQL via `snow sql` is **read-only**: only `SHOW`, `DESCRIBE`, and `SELECT` queries are allowed — never run DDL (`CREATE`, `ALTER`, `DROP`, `GRANT`, `REVOKE`) or DML (`INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`)
-- **NEVER execute DROP commands** — when suggesting removal of unmanaged objects, **output the DROP SQL as a code block** for the user to copy and run manually
+- SQL via `snow sql` is **read-only**: only `SHOW`, `DESCRIBE`, and `SELECT` queries — never DDL or DML
 - Never print contents of `*.p8`, `*.pem`, or `account.auto.tfvars`
-- `# forces replacement` on database, warehouse, or role → always flag as 🔴 HIGH RISK
-- `will be destroyed` → always flag as 🔴 HIGH RISK
-- `is tainted` in state → always flag as 🔴 HIGH RISK
 - If a stack errors on init, skip the plan for that stack and record the error; continue to next stack
 - Do not stop on drift — run all checks regardless and report at the end
 - Always run Phase 2 (unmanaged objects) even if Phase 1 shows no drift

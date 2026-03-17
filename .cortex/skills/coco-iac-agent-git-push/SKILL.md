@@ -146,13 +146,10 @@ After outputting commands, add:
 > ```
 
 ## Rules
-Read `references/guardrails.md` before proceeding.
+Safety and git rules are enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.
 
 Additional rules for git push:
-- **Never push directly to `main`** — always branch + PR
-- **Stage specific files** — never `git add .` blindly (avoids committing `.terraform/`, state files, or secrets)
 - **One logical change per branch** — if multiple workloads changed in one session, split into separate branches
-- **Never force push** — the initial repo setup was a one-time exception
 - If `git status` shows unexpected files (e.g. `.terraform/`, `*.tfstate`, `*.pem`), flag them and do NOT include in `git add`
 - Always run `terraform fmt -recursive` before staging — include any reformatted `.tf`/`.tfvars` files in `git add`
 

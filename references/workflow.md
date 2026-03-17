@@ -9,16 +9,8 @@
 6. **NEVER output raw `terraform apply` commands** — missing `-var-file` flags destroy all resources
 
 ## Guardrails
-- Never run `terraform destroy` by default
-- Never print or read private key file contents
-- Prefer minimal diffs and stack-local changes (one stack at a time)
-- Route unsupported provider behavior to SnowSQL escape hatches
-- ForceNew scan: if a plan contains `# forces replacement`, treat as HIGH RISK and stop
-  ```bash
-  terraform plan -no-color ... | tee plan.out
-  bash scripts/scan-forcenew.sh plan.out   # exit 2 on ForceNew
-  ```
-  Bootstrap enforces this automatically (hard-stop).
+Safety rules (NEVER apply, NEVER destroy, NEVER print secrets) are enforced via `cortex ctx` rules.
+Run `cortex ctx rule list` to review. Only workflow-specific behavioral notes remain below.
 
 ## Drift Check Exit Codes
 ```bash

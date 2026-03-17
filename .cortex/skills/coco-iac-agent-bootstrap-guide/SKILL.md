@@ -161,12 +161,9 @@ After the script completes, prompt the user to verify:
 ---
 
 ## Hard Rules
-Read `references/guardrails.md` before proceeding — all safety rules, command format, SQL safety rules, and stopping points live there.
+Safety rules are enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.
 
 Additional rules specific to bootstrap:
-- Never print contents of `*.p8`, `*.pem`, or `account.auto.tfvars`
-- Never run destructive SQL (`DROP`, `TRUNCATE`, `DELETE`, `CREATE OR REPLACE`) — output commands for user to run manually
-- `# forces replacement` on database, warehouse, or role → 🔴 HIGH RISK, always flag
 - Never re-run bootstrap on a live environment with existing state — warn user if they attempt this
 
 ## Troubleshooting
