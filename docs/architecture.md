@@ -1,3 +1,6 @@
+# Architecture — Provider & Module Dependencies
+
+```mermaid
 flowchart LR
   %% Provider alias → module ownership and key cross-stack dependencies
 
@@ -50,3 +53,4 @@ flowchart LR
   %% Soft references (by name in tfvars, not Terraform outputs)
   Users -. default_warehouse .-> Warehouses
   Users -. role grants .-> Roles
+```

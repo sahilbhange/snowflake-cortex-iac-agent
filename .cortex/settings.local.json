@@ -33,6 +33,11 @@
     "allow": [
       "Read",
       "Glob",
+      "Glob(live/**)",
+      "Glob(modules/**)",
+      "Glob(references/**)",
+      "Glob(.cortex/**)",
+      "Glob(.bootstrap/**)",
       "Grep",
       "Edit",
       "WebFetch(domain:docs.snowflake.com)",

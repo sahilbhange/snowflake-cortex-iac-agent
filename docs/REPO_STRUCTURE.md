@@ -103,10 +103,10 @@ snowflake-cortex-iac-agent/
 │   ├── hcl-patterns.md           ← copy-paste HCL blocks for every resource type
 │   ├── rbac-design.md            ← two-layer RBAC model, access role table, privilege matrix
 │   ├── naming-conventions.md    ← all object naming patterns, conflict detection, NAME PROPOSAL format
-│   ├── workflow.md               ← plan-only contract, ForceNew rules
-│   └── architecture.mmd          ← provider/module dependency diagram (Mermaid)
+│   └── workflow.md               ← plan-only contract, ForceNew rules
 │
 └── docs/                         ← user guides
+    ├── architecture.md            ← provider/module dependency diagram (Mermaid)
     ├── GETTING_STARTED.md        ← CoCo usage (5 workflows)
     ├── DAY2_WORKFLOW.md          ← end-to-end 8-step workflow for infrastructure changes
     ├── REPO_STRUCTURE.md         ← this file
@@ -275,4 +275,4 @@ automatically when CoCo starts in this repo. For install instructions see
 | `$coco-iac-agent-drift-report` | Agent (autonomous) | Runs all 10 plans, returns consolidated report |
 | `$coco-iac-agent-bootstrap-guide` | Agent (non-autonomous) | Pre-flight checks + bootstrap script handoff |
 
-See [`references/architecture.mmd`](../references/architecture.mmd) for the provider/module dependency diagram (render with any Mermaid-compatible viewer or paste into [mermaid.live](https://mermaid.live)).
+See [`docs/architecture.md`](architecture.md) for the provider/module dependency diagram.
