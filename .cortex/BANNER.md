@@ -7,6 +7,6 @@
        🏗️ IaC Agent · ❄️ Snowflake
 
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-Create · Update · Destroy Snowflake resources
+Create · Update · Destroy Resources
 Use $coco-iac-agent to get started
 AI plans · You review · You apply 

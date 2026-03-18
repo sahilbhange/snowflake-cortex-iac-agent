@@ -1,5 +1,7 @@
 # Snowflake Terraform Stack Library
 
+![CoCo IaC Agent](docs/images/CoCo%20Cover.png)
+
 Infrastructure-as-code templates for managing Snowflake account governance, platform services, and workload resources with Terraform. Comes with a [Snowflake Cortex Code (CoCo) skill](SKILL.md) so an AI agent handles plan generation while humans own `terraform apply`.
 
 ## Repository structure
@@ -12,11 +14,14 @@ live/
     account_governance/
     platform/
     workloads/
-  prod/                        ← pre-production (mirrors test structure)
+  prod/                         ← production (mirrors test structure)
 modules/                        ← reusable Terraform modules
-.cortex/
-  skills/                       ← CoCo skills and agents (router, new-workload, new-role-user, account-objects, destroy, promote-env, plan-review, drift-report, bootstrap-guide, git-push)
+scripts/                        ← stack-plan.sh, stack-apply.sh, bootstrap.sh
+docs/                           ← user guides, architecture, skill guide
 references/                     ← stack order, workflow rules, naming conventions, safety guardrails
+bootstrap/                      ← first-time environment setup
+.cortex/
+  skills/                       ← CoCo skills and agents (10 total)
 ```
 
 Each directory under `live/<env>/...` is a standalone Terraform root with its own state.
@@ -47,6 +52,58 @@ CoCo updates `configs/*.tfvars`, runs `terraform plan`, and explains the diff.
 
 Follow the [Execution order](#execution-order) below and run plan/apply yourself.
 See [docs/TERRAFORM_COMMANDS.md](docs/TERRAFORM_COMMANDS.md) for a full raw Terraform command reference.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Providers
+    SecAdmin["snowflake provider (alias: secadmin)"]
+    SysAdmin["snowflake provider (alias: sysadmin)"]
+    AccountAdmin["snowflake provider (alias: accountadmin)"]
+  end
+
+  subgraph Account_Governance["Account Governance"]
+    Roles["modules/roles"]
+    Users["modules/users"]
+  end
+
+  subgraph Platform
+    Databases["modules/databases"]
+    Warehouses["modules/warehouses"]
+    ResourceMonitors["modules/resource_monitors"]
+    StorageInt["modules/storage_integration_s3"]
+    NetworkRules["modules/network_rules"]
+    ExternalAccess["modules/external_access_integrations"]
+  end
+
+  subgraph Workloads
+    Schemas["modules/schemas"]
+    Stages["modules/stages"]
+  end
+
+  SecAdmin --> Roles
+  SecAdmin --> Users
+  SecAdmin --> NetworkRules
+
+  SysAdmin --> Databases
+  SysAdmin --> Warehouses
+  SysAdmin --> Schemas
+  SysAdmin --> Stages
+
+  AccountAdmin --> ResourceMonitors
+  AccountAdmin --> StorageInt
+  AccountAdmin --> ExternalAccess
+
+  Roles --> Users
+  Databases --> Schemas
+  StorageInt --> Stages
+  ResourceMonitors --> Warehouses
+  NetworkRules --> ExternalAccess
+
+  Users -. default_warehouse .-> Warehouses
+  Users -. role grants .-> Roles
+```
 
 ## Prerequisites
 
