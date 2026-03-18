@@ -1,0 +1,55 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat .cortex/BANNER.md"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash(terraform apply*)",
+        "hooks": [{ "type": "reject", "message": "Use scripts/stack-apply.sh manually" }]
+      },
+      {
+        "matcher": "Bash(terraform destroy*)",
+        "hooks": [{ "type": "reject", "message": "Destructive op - run manually" }]
+      },
+      {
+        "matcher": "Bash(git push*)",
+        "hooks": [{ "type": "reject", "message": "Push manually after review" }]
+      },
+      {
+        "matcher": "Bash(git commit*)",
+        "hooks": [{ "type": "reject", "message": "Commit manually after review" }]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit",
+      "WebFetch(domain:docs.snowflake.com)",
+      "WebFetch(domain:registry.terraform.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(terraform init*)",
+      "Bash(terraform plan*)",
+      "Bash(terraform validate*)",
+      "Bash(terraform fmt*)",
+      "Bash(scripts/stack-plan.sh*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(ls*)",
+      "Bash(pwd)"
+    ]
+  }
+}

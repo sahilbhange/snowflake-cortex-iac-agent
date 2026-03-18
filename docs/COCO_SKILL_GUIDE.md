@@ -16,40 +16,25 @@ available for server-side workloads (SQL `SNOWFLAKE.CORTEX.COMPLETE()`, Cortex A
 Cortex Analyst) but not for the CoCo coding agent itself.
 
 Key points:
-- `CLAUDE.md` is the Claude-specific project instruction file — auto-loaded in Claude sessions only
-- There is no model-agnostic equivalent of `CLAUDE.md` (no `CORTEX.md` or `COCO.md` convention)
-- `.cortex/skills/` and `.cortex/agents/` with `SKILL.md` files are the **model-agnostic** way
-  to deliver project context — these load regardless of which LLM backend is active
-- A root-level `SKILL.md` in the repo may not be recognized by all model backends; always place
-  skills inside `.cortex/skills/<name>/SKILL.md`
+- `CORTEX.md` is the project instruction file — auto-loaded at session start
+- `.cortex/skills/` with `SKILL.md` files deliver skill-specific context
+- `.cortex/settings.local.json` controls hooks and permissions
+- `~/.claude/CLAUDE.md` is the global user preferences file (optional)
 
-### Model-Agnostic Skill Design
+### Skill Design Best Practices
 
-When building skills that work across CoCo model backends (Claude, GPT, future models):
-
-**Problem:** `CLAUDE.md` only loads in Claude sessions. If you switch models, any domain rules
-(naming conventions, provider constraints, NEVER/ALWAYS guardrails) defined exclusively in
-`CLAUDE.md` are invisible to the non-Claude session.
-
-**Solution:** Embed domain rules directly in the router skill's `SKILL.md`.
+Embed domain rules in `CORTEX.md` (project-level) and skill `SKILL.md` files:
 
 ```
-.cortex/skills/coco-iac-agent/SKILL.md    ← contains domain rules + routing table
-CLAUDE.md                                  ← optional, keeps rules "always on" for Claude sessions
+CORTEX.md                                  ← project rules, always loaded
+.cortex/skills/coco-iac-agent/SKILL.md     ← skill-specific instructions
 ```
 
 **Design principles:**
-- **Primary source of truth:** `.cortex/skills/<router>/SKILL.md` — loaded by all models when the skill is invoked
-- **`CLAUDE.md` as a safety net:** Keep it for Claude sessions where users may ask questions
-  without invoking the skill. It's redundant when the skill is active, but catches ad-hoc conversations.
-- **Root `SKILL.md` is not portable:** A `SKILL.md` at the repo root may only be recognized by
-  Claude-based sessions. Always place the canonical copy in `.cortex/skills/`.
-- **External skill copies drift:** Avoid copying skills to `~/cortex-skills/` or
-  `~/.snowflake/cortex/skills/`. Use symlinks if global access is needed, or rely on
-  project-level `.cortex/` exclusively.
-- **Prompt style:** Write instructions in plain, imperative English. Avoid Claude-specific
-  prompt patterns (XML tags, `<instructions>` blocks) — they may not transfer to other models.
-  Markdown headings, bullet lists, and tables work universally.
+- **Primary source of truth:** `CORTEX.md` for project-wide rules
+- **Skill-specific context:** `.cortex/skills/<name>/SKILL.md` for focused instructions
+- **Always place skills in `.cortex/skills/`** — ensures they're found by CoCo
+- **Prompt style:** Write instructions in plain, imperative English. Markdown headings, bullet lists, and tables work universally.
 
 ### Skills vs Agents
 
@@ -458,3 +443,254 @@ $coco-iac-agent What can you do and what stacks does this repo manage?
 ```
 
 Expected: parent skill loads, describes sub-skills and agents, reads `references/stack-mapping.md`, returns the 10-stack table.
+
+---
+
+## CoCo Configuration Files
+
+CoCo uses several configuration files at different scopes. Here's how they're used in this repo:
+
+### File Hierarchy (Load Order)
+
+| File | Scope | Auto-loaded? | Purpose |
+|------|-------|--------------|---------|
+| `~/.claude/CLAUDE.md` | Global (user) | ✅ Yes | Personal preferences across all projects |
+| `CORTEX.md` | Project | ✅ Yes | Project instructions, domain rules, safety guardrails |
+| `.cortex/settings.local.json` | Project | ✅ Yes | Hooks, permissions, local overrides |
+| `.cortex/BANNER.md` | Project | Via hook | Session start banner (requires SessionStart hook) |
+| `.cortex/skills/*/SKILL.md` | Project | On invoke | Skill-specific instructions |
+| `references/*.md` | Project | On demand | Domain knowledge read by skills |
+
+### CORTEX.md — Project Instructions
+
+The primary project instruction file. Auto-loaded at session start.
+
+**Location:** Project root (`/CORTEX.md`)
+
+**What to put here:**
+- Domain rules that apply to ALL interactions (not just skill invocations)
+- Safety guardrails (NEVER/ALWAYS rules)
+- Naming conventions summary
+- Skill routing guard (reminder to use skills)
+- Provider aliases and role hierarchy
+
+**This repo's CORTEX.md contains:**
+- Terraform safety rules (never apply, never destroy)
+- Git safety rules (never push, never commit)
+- SQL safety rules (no destructive SQL)
+- Skill routing table
+- Provider alias mapping
+- Naming conventions
+
+### .cortex/settings.local.json — Hooks & Permissions
+
+Controls CoCo behavior: what's auto-approved, what's blocked, what runs at session start.
+
+**Location:** `.cortex/settings.local.json`
+
+**Structure:**
+```json
+{
+  "hooks": {
+    "SessionStart": [...],
+    "PreToolUse": [...]
+  },
+  "permissions": {
+    "allow": [...]
+  }
+}
+```
+
+#### SessionStart Hooks
+
+Run commands when a CoCo session begins. Used for banners, environment checks.
+
+```json
+"SessionStart": [
+  {
+    "hooks": [
+      {
+        "type": "command",
+        "command": "cat .cortex/BANNER.md"
+      }
+    ]
+  }
+]
+```
+
+#### PreToolUse Hooks (Safety Guardrails)
+
+Block dangerous operations before they execute. Pattern-matched against tool calls.
+
+```json
+"PreToolUse": [
+  {
+    "matcher": "Bash(terraform apply*)",
+    "hooks": [{ "type": "reject", "message": "Use scripts/stack-apply.sh manually" }]
+  },
+  {
+    "matcher": "Bash(terraform destroy*)",
+    "hooks": [{ "type": "reject", "message": "Destructive op - run manually" }]
+  },
+  {
+    "matcher": "Bash(git push*)",
+    "hooks": [{ "type": "reject", "message": "Push manually after review" }]
+  },
+  {
+    "matcher": "Bash(git commit*)",
+    "hooks": [{ "type": "reject", "message": "Commit manually after review" }]
+  }
+]
+```
+
+**How matchers work:**
+- Only the specific pattern is blocked
+- `Bash(terraform apply*)` blocks `terraform apply`, `terraform apply -auto-approve`
+- Does NOT block `terraform plan`, `terraform init`, etc.
+
+#### Permissions Allow List
+
+Auto-approve specific tools/commands without prompting.
+
+```json
+"permissions": {
+  "allow": [
+    "Read",
+    "Glob",
+    "Grep",
+    "Edit",
+    "WebFetch(domain:docs.snowflake.com)",
+    "WebFetch(domain:registry.terraform.io)",
+    "WebFetch(domain:github.com)",
+    "WebFetch(domain:raw.githubusercontent.com)",
+    "Bash(terraform init*)",
+    "Bash(terraform plan*)",
+    "Bash(terraform validate*)",
+    "Bash(terraform fmt*)",
+    "Bash(scripts/stack-plan.sh*)",
+    "Bash(git status*)",
+    "Bash(git diff*)",
+    "Bash(git log*)",
+    "Bash(git branch*)",
+    "Bash(ls*)",
+    "Bash(pwd)"
+  ]
+}
+```
+
+**This repo's settings:**
+- Auto-approve: Read, Glob, Grep, Edit (file operations)
+- Auto-approve: Safe terraform commands (init, plan, validate, fmt)
+- Auto-approve: Read-only git commands (status, diff, log, branch)
+- Auto-approve: WebFetch for Snowflake docs and Terraform registry
+- Block: terraform apply, terraform destroy, git push, git commit
+
+### .cortex/BANNER.md — Session Banner
+
+Displayed at session start via SessionStart hook. Not auto-loaded — requires hook config.
+
+**Location:** `.cortex/BANNER.md`
+
+**Example:**
+```
+  +---+---+---+---+
+  | C | o | C | o |  IaC Agent
+  +---+---+---+---+  Snowflake · Terraform
+  
+  Use $coco-iac-agent to get started
+  AI plans · You review · You apply
+```
+
+**Tips:**
+- Use ASCII art (not Unicode box-drawing) for terminal compatibility
+- Keep it short — 5-6 lines max
+- Include the main entry point skill name
+
+### references/ — Domain Knowledge
+
+Reference documents that skills read on-demand. Keeps skill context lean.
+
+**Location:** `references/*.md`
+
+**This repo's references:**
+| File | Purpose |
+|------|---------|
+| `guardrails.md` | Safety rules, stopping points |
+| `naming-conventions.md` | Object naming, NAME PROPOSAL format |
+| `stack-mapping.md` | Stack execution order, provider aliases |
+| `hcl-patterns.md` | Copy-paste HCL blocks for every resource type |
+| `rbac-design.md` | Two-layer RBAC model, privilege matrix |
+| `workflow.md` | Day-2 operation workflows |
+
+**Why separate from skills:**
+- Avoids burning tokens on every skill invocation
+- Skills read only what they need: `Read references/naming-conventions.md`
+- Single source of truth — update once, all skills get the change
+
+---
+
+## cortex ctx — Memory & Context
+
+CoCo can remember information across sessions using `cortex ctx`.
+
+### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `cortex ctx remember "fact"` | Store a memory |
+| `cortex ctx forget <id>` | Remove a memory |
+| `cortex ctx list` | Show all memories |
+| `cortex ctx rule add "rule"` | Add a behavioral rule |
+| `cortex ctx rule list` | Show all rules |
+| `cortex ctx rule remove <id>` | Remove a rule |
+
+### Use Cases
+
+**Personal preferences:**
+```
+cortex ctx remember "Prefer XS warehouse size for test environments"
+cortex ctx remember "Always use snake_case for Terraform resource labels"
+```
+
+**Behavioral rules:**
+```
+cortex ctx rule add "Never auto-commit changes"
+cortex ctx rule add "Always show plan output before suggesting apply"
+```
+
+### Where It's Stored
+
+Memories are stored in `~/.claude/` and persist across sessions. They're user-scoped, not project-scoped.
+
+---
+
+## Complete CoCo Feature Summary
+
+| Feature | Location | Purpose | Used in This Repo |
+|---------|----------|---------|-------------------|
+| `CORTEX.md` | Project root | Project instructions (auto-loaded) | ✅ Domain rules, safety guardrails |
+| `.cortex/skills/` | Project | Skill definitions | ✅ 10 skills for IaC operations |
+| `.cortex/settings.local.json` | Project | Hooks, permissions | ✅ Safety blocks, auto-approvals |
+| `.cortex/BANNER.md` | Project | Session banner | ✅ Entry point reminder |
+| `references/` | Project | Domain knowledge | ✅ 6 reference docs |
+| `~/.claude/CLAUDE.md` | User global | Personal preferences | User-specific |
+| `cortex ctx` | User global | Cross-session memory | Optional |
+
+---
+
+## Recommended Setup for New Projects
+
+1. **Create CORTEX.md** — project instructions, safety rules
+2. **Create .cortex/skills/** — at minimum a router skill
+3. **Create .cortex/settings.local.json** — block dangerous ops, auto-approve safe ones
+4. **Create .cortex/BANNER.md** — remind users of entry point
+5. **Create references/** — domain knowledge for skills to read on-demand
+
+```bash
+mkdir -p .cortex/skills/my-router
+touch CORTEX.md
+touch .cortex/BANNER.md
+touch .cortex/settings.local.json
+touch .cortex/skills/my-router/SKILL.md
+mkdir -p references
+```

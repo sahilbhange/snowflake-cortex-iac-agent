@@ -44,6 +44,8 @@ If asked about infrastructure changes without `$coco-iac-agent`:
 - **NEVER** run `git add .` — stage specific files only
 - For commit/push/PR: output exact commands as code block, user runs them
 
+**When user asks to commit/push/PR:** Direct them to use `$coco-iac-agent-git-push` for standardized branch naming, commit messages, and PR creation.
+
 ## SQL Safety — ABSOLUTE RULES
 
 - **NEVER** execute destructive SQL: `DROP`, `TRUNCATE`, `DELETE`, `CREATE OR REPLACE`, `REVOKE`
