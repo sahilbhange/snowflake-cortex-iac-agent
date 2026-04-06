@@ -13,7 +13,7 @@ warehouses = {
     auto_resume  = true
   }
   ENGINEER_WH = {
-    size         = "XSMALL"
+    size         = "LARGE"
     auto_suspend = 60
     auto_resume  = true
   }
@@ -38,6 +38,26 @@ warehouses = {
     auto_resume  = true
   }
   FINANCE_WH = {
+    size         = "XSMALL"
+    auto_suspend = 60
+    auto_resume  = true
+  }
+  SALES_WH = {
+    size         = "XSMALL"
+    auto_suspend = 60
+    auto_resume  = true
+  }
+  ETL_WH = {
+    size         = "XSMALL"
+    auto_suspend = 60
+    auto_resume  = true
+  }
+  ML_PLATFORM_WH = {
+    size         = "XSMALL"
+    auto_suspend = 60
+    auto_resume  = true
+  }
+  GROWTH_WH = {
     size         = "XSMALL"
     auto_suspend = 60
     auto_resume  = true

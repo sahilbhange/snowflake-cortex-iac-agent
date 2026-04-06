@@ -18,6 +18,8 @@ variable "granted_roles" {
 resource "snowflake_account_role" "this" {
   name    = var.name
   comment = var.comment
+
+  lifecycle { prevent_destroy = true }
 }
 
 resource "snowflake_grant_account_role" "to_parent_roles" {

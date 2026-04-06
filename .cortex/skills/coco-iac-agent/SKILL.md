@@ -1,12 +1,12 @@
 ---
 name: coco-iac-agent
-description: Use when managing Snowflake infrastructure with Terraform — adding roles, users, databases, warehouses, schemas, resource monitors, network rules, external access integrations, or storage integrations. Routes to focused sub-skills for workload onboarding, RBAC changes, account objects, drift detection, plan review, and first-time bootstrap guidance. Always runs terraform plan first; never applies without explicit human confirmation.
+description: Use when managing Snowflake infrastructure with Terraform — adding roles, users, service users, databases, warehouses, schemas, resource monitors, network rules, network policies, external access integrations, storage integrations, or account parameters. Routes to focused sub-skills for workload onboarding, RBAC changes, account objects, drift detection, plan review, and first-time bootstrap guidance. Always runs terraform plan first; never applies without explicit human confirmation.
 tools:
   - read
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-11
+- **Last updated:** 2026-03-26
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -19,6 +19,8 @@ Run `cortex ctx rule list` to review active rules. See `docs/RULES_REFERENCE.md`
 ## When to Use
 - Onboarding a new team or squad (role + warehouse + schemas)
 - Adding or updating a Snowflake user or RBAC assignment
+- Adding a service user (TYPE=SERVICE, key-pair auth only)
+- Adding or updating network policies, account parameters
 - Removing one or more resources (user, role, warehouse, schema, full workload)
 - Promoting validated configs from test → stage or prod
 - Checking for drift between Terraform state and live Snowflake objects
@@ -42,8 +44,8 @@ Route every request to the appropriate skill:
 | First-time env setup, prerequisites, stack walkthrough | `$coco-iac-agent-bootstrap-guide` |
 | Find drift (manual changes outside Terraform) | `$coco-iac-agent-drift-report` |
 | New team/squad (role + warehouse + schemas) | `$coco-iac-agent-new-workload` |
-| Add a user, update RBAC, role grants | `$coco-iac-agent-new-role-user` |
-| Resource monitors, network rules, external access integrations | `$coco-iac-agent-account-objects` |
+| Add a user, add a service user, update RBAC, role grants | `$coco-iac-agent-new-role-user` |
+| Resource monitors, network rules, network policies, external access integrations, account parameters | `$coco-iac-agent-account-objects` |
 | Remove a user, role, warehouse, schema, or full workload | `$coco-iac-agent-destroy` |
 | Promote configs from test → stage or prod | `$coco-iac-agent-promote-env` |
 | Explain a plan output, flag risks | `$coco-iac-agent-plan-review` |
@@ -67,8 +69,8 @@ Intent detection
      |-> Bootstrap / first-time setup  -> $coco-iac-agent-bootstrap-guide
      |-> Drift check across all stacks -> $coco-iac-agent-drift-report
      |-> New team / workload           -> $coco-iac-agent-new-workload
-     |-> Add user / RBAC change        -> $coco-iac-agent-new-role-user
-     |-> Resource monitors / network rules / EAIs -> $coco-iac-agent-account-objects
+     |-> Add user / service user / RBAC change -> $coco-iac-agent-new-role-user
+     |-> Resource monitors / network rules / network policies / EAIs / account params -> $coco-iac-agent-account-objects
      |-> Remove resource(s)            -> $coco-iac-agent-destroy
      |-> Promote test → stage / prod   -> $coco-iac-agent-promote-env
      |-> Plan review + risk check      -> $coco-iac-agent-plan-review
@@ -100,7 +102,7 @@ Assistant: Routes to `$coco-iac-agent-new-role-user`, validates role hierarchy, 
 
 ### Example 3: Drift check
 User: `$coco-iac-agent run drift report for all stacks in stage`
-Assistant: Routes to `$coco-iac-agent-drift-report`. Runs `terraform plan -detailed-exitcode` across all 10 stacks autonomously, then returns a consolidated per-stack report with HIGH RISK flags — no manual intervention needed.
+Assistant: Routes to `$coco-iac-agent-drift-report`. Runs `terraform plan -detailed-exitcode` across all 13 stacks autonomously, then returns a consolidated per-stack report with HIGH RISK flags — no manual intervention needed.
 
 ### Example 4: Bootstrap new account
 User: `$coco-iac-agent bootstrap test env for a new Snowflake account`
@@ -125,3 +127,15 @@ Assistant: Routes to `$coco-iac-agent-promote-env`. Reads test + prod tfvars. St
 ### Example 9: Add network rule and EAI
 User: `$coco-iac-agent add PyPI egress network rule and external access integration in prod`
 Assistant: Routes to `$coco-iac-agent-account-objects`. Verifies ADMIN_DB.GOVERNANCE schema exists. Adds `PYPI_NETWORK_RULE` (HOST_PORT/EGRESS) to `create_network_rules.tfvars` and `PYPI_ACCESS_INTEGRATION` referencing it to `create_external_access_integrations.tfvars`. Runs plan for `platform/network_rules` then `platform/external_access_integrations`. Waits for approval between stacks. Outputs apply commands in dependency order.
+
+### Example 10: Add network policy
+User: `$coco-iac-agent add a network policy to restrict access to our office IPs in test`
+Assistant: Routes to `$coco-iac-agent-account-objects`. Adds `OFFICE_NETWORK_POLICY` to `create_network_policies.tfvars` with `allowed_ip_list = ["203.0.113.0/24"]`. Runs plan for `platform/network_policies`. Warns that assigning to account requires separate `ALTER ACCOUNT SET NETWORK_POLICY` step. Outputs apply command.
+
+### Example 11: Set account parameters
+User: `$coco-iac-agent set statement timeout to 1800 and timezone to UTC in test`
+Assistant: Routes to `$coco-iac-agent-account-objects`. Reads existing `create_account_parameters.tfvars`, updates `STATEMENT_TIMEOUT_IN_SECONDS = "1800"` and `TIMEZONE = "UTC"`. Runs plan for `platform/account_parameters` showing 2 changes. Outputs apply command.
+
+### Example 12: Add service user
+User: `$coco-iac-agent add a service user AIRFLOW_SVC with AIRFLOW_ROLE in test`
+Assistant: Routes to `$coco-iac-agent-new-role-user`. Detects service user request → uses `create_service_users.tfvars` + `account_governance/service_users` stack. Validates AIRFLOW_ROLE exists in `create_role.tfvars`. Adds `AIRFLOW_SVC` entry with `granted_roles = ["AIRFLOW_ROLE"]`, `rsa_public_key = null` (placeholder). Runs plan for `account_governance/service_users`. Outputs apply command and reminds user to set RSA key post-creation.

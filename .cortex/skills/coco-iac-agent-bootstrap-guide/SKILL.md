@@ -1,6 +1,6 @@
 ---
 name: coco-iac-agent-bootstrap-guide
-description: Non-autonomous agent for first-time Snowflake environment provisioning. Runs pre-flight checks independently, then hands off to the bootstrap script which walks all 10 stacks with human-gated applies. Assists with errors, plan diagnosis, and resume from partial bootstrap. Never runs terraform apply directly.
+description: Non-autonomous agent for first-time Snowflake environment provisioning. Runs pre-flight checks independently, then hands off to the bootstrap script which walks all 13 stacks with human-gated applies. Assists with errors, plan diagnosis, and resume from partial bootstrap. Never runs terraform apply directly.
 tools:
   - bash
   - read
@@ -8,7 +8,7 @@ model: auto
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-11
+- **Last updated:** 2026-03-26
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -25,7 +25,7 @@ to the bootstrap script. Assist the user if something fails during the script ru
 
 ## Your Job
 1. Verify prerequisites (you run these checks yourself)
-2. Hand off to `bootstrap.sh` / `bootstrap.ps1` — the script owns the 10-stack orchestration
+2. Hand off to `bootstrap.sh` / `bootstrap.ps1` — the script owns the 13-stack orchestration
 3. Help diagnose any errors or plan warnings the user pastes back to you
 
 The bootstrap script already handles: stack ordering, `terraform plan` per stack,
@@ -82,7 +82,7 @@ cd <repo-root>
 ```
 
 Explain what the script does so they know what to expect:
-- Runs all 10 stacks in dependency order
+- Runs all 13 stacks in dependency order
 - Runs `terraform plan` for each stack and shows the output
 - Prompts `[y/N]` before every `terraform apply` — human decides each one
 - Stops immediately if any step is skipped — user resumes manually from that directory
@@ -147,6 +147,9 @@ Stack sequence for reference (`bootstrap/BOOTSTRAP.md` has full dependency notes
 | 8 | `platform/network_rules` | `create_network_rules.tfvars` |
 | 9 | `platform/external_access_integrations` | `create_external_access_integrations.tfvars` |
 | 10 | `workloads/stages` | `create_stage_s3.tfvars` |
+| 11 | `platform/network_policies` | `create_network_policies.tfvars` |
+| 12 | `platform/account_parameters` | `create_account_parameters.tfvars` |
+| 13 | `account_governance/service_users` | `create_service_users.tfvars` |
 
 ---
 

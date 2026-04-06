@@ -10,7 +10,7 @@ tools:
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-13
+- **Last updated:** 2026-03-26
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -77,7 +77,9 @@ For each warehouse → ask:
 
 Before any edits, show full proposed additions per tfvars file.
 
-⚠️ **Users are NOT promoted automatically** — credentials are env-specific. Note this and direct to `$coco-iac-agent-new-role-user`.
+⚠️ **Users and service users are NOT promoted automatically** — credentials are env-specific. Note this and direct to `$coco-iac-agent-new-role-user`.
+
+⚠️ **Account parameters may differ between environments** — review each parameter value for env-appropriateness (e.g., stricter session timeouts in prod). Do not blindly copy from test to prod.
 
 ⚠️ **STOP** — wait for explicit confirmation.
 
@@ -136,7 +138,9 @@ snow sql -q "SHOW ROLES LIKE '<pattern>';" -c "$CONNECTION"
 
 ## Key Rules
 - **Never overwrite existing target entries** — only add new
-- **Never promote user entries** — always manual via `$coco-iac-agent-new-role-user`
+- **Never promote user or service user entries** — always manual via `$coco-iac-agent-new-role-user` (credentials/keys are env-specific)
+- **Account parameters require review** — values may need adjustment for target env (e.g., stricter settings in prod)
+- **Network policies require review** — IP allowlists may differ between environments
 - **Promotion = configs only** — data, query history, grants to external objects are not promoted
 
 All other safety/naming rules enforced via `cortex ctx` rules. Run `cortex ctx rule list` to review.

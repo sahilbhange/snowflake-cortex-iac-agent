@@ -15,6 +15,9 @@ Apply in this exact sequence — each stack depends on the previous:
 | 8 | `platform/network_rules` | `create_network_rules.tfvars` | ADMIN_DB.GOVERNANCE (step 7) |
 | 9 | `platform/external_access_integrations` | `create_external_access_integrations.tfvars` | Network rules (step 8), SnowSQL |
 | 10 | `workloads/stages` | `create_stage_s3.tfvars` | Schemas (step 7), storage integrations (step 6) |
+| 11 | `platform/network_policies` | `create_network_policies.tfvars` | None |
+| 12 | `platform/account_parameters` | `create_account_parameters.tfvars` | None |
+| 13 | `account_governance/service_users` | `create_service_users.tfvars` | Roles (step 1) |
 
 ## Standard Plan Command
 ```bash
@@ -24,9 +27,9 @@ bash scripts/stack-plan.sh <env> <layer> <resource> --run
 Never use raw `terraform plan` — missing `-var-file` flags cause Terraform to use empty defaults and destroy all resources. `stack-plan.sh` enforces correct flag injection and pre-flight checks on every run.
 
 ## Provider Alias Ownership
-- `secadmin` → roles, users, network rules
+- `secadmin` → roles, users, service users, network rules
 - `sysadmin` → databases, warehouses, schemas, stages
-- `accountadmin` → resource monitors, storage integrations, external access integrations
+- `accountadmin` → resource monitors, storage integrations, external access integrations, network policies, account parameters
 
 ## Environment Naming
 - `*_TEST` in `test`

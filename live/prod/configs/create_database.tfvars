@@ -25,4 +25,8 @@ databases = {
     comment                     = "Data Platform infrastructure — orchestration, quality checks, metadata"
     data_retention_time_in_days = 14
   }
+  RESEARCH = {
+    comment                     = "Database for research and development work"
+    data_retention_time_in_days = 1
+  }
 }

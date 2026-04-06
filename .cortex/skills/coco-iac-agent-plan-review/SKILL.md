@@ -7,7 +7,7 @@ tools:
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-11
+- **Last updated:** 2026-03-26
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -48,11 +48,13 @@ Classify each change:
 | 🔴 HIGH | Any `destroy` on database, warehouse, or role |
 | 🔴 HIGH | `snowflake_user.login_name` change on an existing user |
 | 🔴 HIGH | `snowflake_schema.with_managed_access` change |
+| 🔴 HIGH | `snowflake_network_policy` removal when assigned to account or users — can lock everyone out |
 | 🟡 MEDIUM | RBAC changes — new grants, role membership, privilege expansion |
 | 🟡 MEDIUM | Schema `# forces replacement` |
 | 🟡 MEDIUM | Any grant that adds ACCOUNTADMIN to a functional role |
+| 🟡 MEDIUM | `snowflake_account_parameter` change — affects account-wide behavior |
 | 🟢 LOW | User attribute updates without replacement |
-| 🟢 LOW | New creates for schema, stage, network rule with no replacement |
+| 🟢 LOW | New creates for schema, stage, network rule, network policy, service user with no replacement |
 
 **Output format for this section:**
 
@@ -78,14 +80,15 @@ Read `references/hcl-patterns.md` for the authoritative patterns.
 - [ ] `required_version = ">= 1.5"` in terraform block
 
 ### Provider Alias Ownership
-- [ ] Roles and users use `provider = snowflake.secadmin`
+- [ ] Roles, users, and service users use `provider = snowflake.secadmin`
 - [ ] Databases, warehouses, schemas, stages use `provider = snowflake.sysadmin`
-- [ ] Resource monitors, storage integrations, external access use `provider = snowflake.accountadmin`
+- [ ] Resource monitors, storage integrations, external access, network policies, account parameters use `provider = snowflake.accountadmin`
 
 ### Resource Names (v2.x — deprecated names cause drift or errors)
 - [ ] Roles use `snowflake_account_role` — not `snowflake_role`
 - [ ] Privilege grants use `snowflake_grant_privileges_to_account_role` — not `snowflake_grant_privileges_to_role`
 - [ ] Role assignments use `snowflake_grant_account_role` — not `snowflake_grant_role`
+- [ ] Service accounts use `snowflake_service_user` — not `snowflake_user` with RSA key (legacy pattern)
 
 ### Naming Conventions
 - [ ] All Snowflake object names UPPERCASE (roles, warehouses, databases, schemas, users)
@@ -118,6 +121,16 @@ Read `references/hcl-patterns.md` for the authoritative patterns.
 - [ ] Human users: `must_change_password = true` if using password auth
 - [ ] Service accounts: `rsa_public_key` uses `file()` reference — never hardcoded key content
 - [ ] `login_name` not changed on any existing user (ForceNew — HIGH RISK)
+- [ ] Non-interactive service accounts use `snowflake_service_user` resource — not `snowflake_user` with RSA key
+- [ ] `snowflake_service_user` has no `password` attribute set (TYPE=SERVICE enforces key-pair only)
+
+### Network Policies
+- [ ] `snowflake_network_policy` uses `provider = snowflake.accountadmin`
+- [ ] Removal of existing policy: check if assigned to account or users — 🔴 HIGH RISK if so
+
+### Account Parameters
+- [ ] `snowflake_account_parameter` uses `provider = snowflake.accountadmin`
+- [ ] Values are always strings (even for numeric parameters)
 
 **Output format for this section:**
 
