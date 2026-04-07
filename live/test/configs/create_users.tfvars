@@ -85,4 +85,32 @@ users = {
     default_warehouse = "FINANCE_WH"
     roles             = ["FINANCE_ROLE"]
   }
+
+  tsmith = {
+    first_name        = "Tom"
+    last_name         = "Smith"
+    email             = "tsmith@company.com"
+    default_role      = "SALES_ROLE"
+    default_warehouse = "SALES_WH"
+    roles             = ["SALES_ROLE"]
+  }
+
+  SAHILBHANGE = {
+    first_name              = "Sahil"
+    last_name               = "Bhange"
+    email                   = "s.ahilbhange@gmail.com"
+    default_role            = "ACCOUNTADMIN"
+    default_warehouse       = "ETL_WH"
+    roles                   = []
+    create_workspace_schema = false
+  }
+
+  jreeves = {
+    first_name        = "Julia"
+    last_name         = "Reeves"
+    email             = "jreeves@company.com"
+    default_role      = "GROWTH_ROLE"
+    default_warehouse = "GROWTH_WH"
+    roles             = ["GROWTH_ROLE"]
+  }
 }

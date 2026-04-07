@@ -2,7 +2,7 @@ enable_role = true
 
 roles = {
 
-  # ── Access Roles ────────────────────────────────────────────────────────────
+  #  Access Roles 
   # Never assigned to users directly. Granted INTO functional roles.
 
   RAW_READ = {
@@ -59,7 +59,12 @@ roles = {
     granted_roles = ["ANALYTICS_MART_READ", "SHARED_READ"]
   }
 
-  # ── Functional Roles ─────────────────────────────────────────────────────────
+  SALES_READ = {
+    comment      = "Read access on ANALYTICS_DB.SALES_MART — Sales team consumers"
+    parent_roles = ["SYSADMIN"]
+  }
+
+  #  Functional Roles ─
   # Assigned to humans and service accounts. Inherit privileges via access roles.
 
   ENGINEER_ROLE = {
@@ -108,5 +113,29 @@ roles = {
     comment       = "Finance squad — read analytics mart + shared data, own BUDGETS + FORECASTS schemas"
     parent_roles  = ["SYSADMIN"]
     granted_roles = ["FINANCE_READ"]
+  }
+
+  SALES_ROLE = {
+    comment       = "Sales team — owns SALES_MART schema"
+    parent_roles  = ["SYSADMIN"]
+    granted_roles = ["SALES_READ"]
+  }
+
+  ETL_ROLE = {
+    comment       = "Data engineering tasks — ETL workloads"
+    parent_roles  = ["SYSADMIN"]
+    granted_roles = ["RAW_WRITE", "ANALYTICS_WRITE"]
+  }
+
+  ML_PLATFORM_ROLE = {
+    comment       = "ML Platform team — reads RAW_DB, writes ANALYTICS_DB"
+    parent_roles  = ["SYSADMIN"]
+    granted_roles = ["RAW_READ", "ANALYTICS_WRITE"]
+  }
+
+  GROWTH_ROLE = {
+    comment       = "Growth squad — reads RAW_DB, writes ANALYTICS_DB, shared read"
+    parent_roles  = ["SYSADMIN"]
+    granted_roles = ["RAW_READ", "ANALYTICS_WRITE", "SHARED_READ"]
   }
 }

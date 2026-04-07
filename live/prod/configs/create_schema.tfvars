@@ -18,6 +18,10 @@ schemas = {
     database = "RAW_DB"
     comment  = "Generic landing zone for ad-hoc loads"
   }
+  INGESTION = {
+    database = "RAW_DB"
+    comment  = "Landing zone for raw data ingestion"
+  }
 
   # ANALYTICS_DB — transformation layers (dbt-aligned)
   STAGING = {
@@ -67,6 +71,23 @@ schemas = {
   FORECASTS = {
     database = "ANALYTICS_DB"
     comment  = "Finance forecasting models and projections"
+  }
+
+  # ANALYTICS_DB — Sales schemas
+  SALES_MART = {
+    database            = "ANALYTICS_DB"
+    comment             = "Sales mart - created outside Terraform"
+    with_managed_access = false
+  }
+
+  ML_PLATFORM_MART = {
+    database = "ANALYTICS_DB"
+    comment  = "ML Platform team mart — feature stores, model outputs, experiments"
+  }
+
+  GROWTH_MART = {
+    database = "ANALYTICS_DB"
+    comment  = "Growth squad mart — growth analytics, experiments, metrics"
   }
 
   # PIPELINES_DB — Data Platform infrastructure

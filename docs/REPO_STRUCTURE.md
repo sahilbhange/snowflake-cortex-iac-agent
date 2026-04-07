@@ -17,7 +17,7 @@ unexpected plan output, or onboarding a new contributor. For day-to-day usage se
                     │ reads / edits
 ┌───────────────────▼──────────────────────────────────┐
 │  Terraform stack  (live/ + modules/)                 │
-│  The actual infrastructure — 10 independent stacks,  │
+│  The actual infrastructure — 13 independent stacks,  │
 │  one per Snowflake resource type                     │
 └──────────────────────────────────────────────────────┘
 ```
@@ -45,17 +45,23 @@ snowflake-cortex-iac-agent/
 │   │   │   ├── create_schema.tfvars
 │   │   │   ├── create_network_rules.tfvars
 │   │   │   ├── create_external_access_integrations.tfvars
-│   │   │   └── create_stage_s3.tfvars
+│   │   │   ├── create_stage_s3.tfvars
+│   │   │   ├── create_network_policies.tfvars
+│   │   │   ├── create_account_parameters.tfvars
+│   │   │   └── create_service_users.tfvars
 │   │   ├── account_governance/
 │   │   │   ├── roles/            ← stack 1
-│   │   │   └── users/            ← stack 3
+│   │   │   ├── users/            ← stack 3
+│   │   │   └── service_users/    ← stack 13
 │   │   ├── platform/
 │   │   │   ├── databases/        ← stack 2
 │   │   │   ├── warehouses/       ← stack 4
 │   │   │   ├── resource_monitors/        ← stack 5
 │   │   │   ├── storage_integrations_s3/  ← stack 6 (SnowSQL)
 │   │   │   ├── network_rules/            ← stack 8
-│   │   │   └── external_access_integrations/ ← stack 9 (SnowSQL)
+│   │   │   ├── external_access_integrations/ ← stack 9 (SnowSQL)
+│   │   │   ├── network_policies/         ← stack 11
+│   │   │   └── account_parameters/       ← stack 12
 │   │   └── workloads/
 │   │       ├── schemas/          ← stack 7
 │   │       └── stages/           ← stack 10
@@ -71,7 +77,10 @@ snowflake-cortex-iac-agent/
 │   ├── schemas/
 │   ├── network_rules/
 │   ├── external_access_integrations/
-│   └── stages/
+│   ├── stages/
+│   ├── network_policies/
+│   ├── account_parameters/
+│   └── service_users/
 │
 ├── bootstrap/                    ← first-time provisioning scripts
 │   ├── bootstrap.sh              ← macOS / Linux
@@ -178,9 +187,9 @@ Three Snowflake roles are used as Terraform providers, each scoped to what that 
 
 | Alias | Snowflake role | Manages |
 |---|---|---|
-| `snowflake.secadmin` | SECURITYADMIN | Roles, users, network rules |
+| `snowflake.secadmin` | SECURITYADMIN | Roles, users, service users, network rules |
 | `snowflake.sysadmin` | SYSADMIN | Databases, warehouses, schemas, stages |
-| `snowflake.accountadmin` | ACCOUNTADMIN | Resource monitors, storage integrations, external access integrations |
+| `snowflake.accountadmin` | ACCOUNTADMIN | Resource monitors, storage integrations, external access integrations, network policies, account parameters |
 
 Using the wrong alias will cause silent drift or permission errors. CoCo enforces this in
 `plan-review` and flags violations.
@@ -272,7 +281,7 @@ automatically when CoCo starts in this repo. For install instructions see
 | `$coco-iac-agent-promote-env` | Skill | Promote validated configs from test → stage/prod with suffix transformation |
 | `$coco-iac-agent-plan-review` | Skill | Risk classification + standards compliance check |
 | `$coco-iac-agent-git-push` | Skill | Generate branch name, commit message, and PR commands after apply |
-| `$coco-iac-agent-drift-report` | Agent (autonomous) | Runs all 10 plans, returns consolidated report |
+| `$coco-iac-agent-drift-report` | Agent (autonomous) | Runs all 13 plans, returns consolidated report |
 | `$coco-iac-agent-bootstrap-guide` | Agent (non-autonomous) | Pre-flight checks + bootstrap script handoff |
 
 See [`docs/architecture.md`](architecture.md) for the provider/module dependency diagram.

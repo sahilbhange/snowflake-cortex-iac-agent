@@ -57,6 +57,9 @@ case "${resource}" in
   schemas)                        config_file="create_schema.tfvars" ;;
   resource_monitors)              config_file="create_resource_monitor.tfvars" ;;
   network_rules)                  config_file="create_network_rules.tfvars" ;;
+  network_policies)               config_file="create_network_policies.tfvars" ;;
+  account_parameters)             config_file="create_account_parameters.tfvars" ;;
+  service_users)                  config_file="create_service_users.tfvars" ;;
   storage_integrations_s3)        config_file="create_storage_integration_s3.tfvars" ;;
   external_access_integrations)   config_file="create_external_access_integrations.tfvars" ;;
   stages)                         config_file="create_stage_s3.tfvars" ;;

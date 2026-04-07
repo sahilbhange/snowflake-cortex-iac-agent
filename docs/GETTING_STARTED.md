@@ -27,7 +27,7 @@ CoCo never runs `terraform apply`. Every apply is explicitly yours.
 |---|---|---|
 | `$coco-iac-agent` | Skill (router) | Entry point — routes to the right skill or agent |
 | `$coco-iac-agent-bootstrap-guide` | **Agent** (non-autonomous) | Pre-flight checks + hands off to bootstrap script, assists with errors |
-| `$coco-iac-agent-drift-report` | **Agent** (autonomous) | Runs all 10 plans independently, returns consolidated drift report |
+| `$coco-iac-agent-drift-report` | **Agent** (autonomous) | Runs all 13 plans independently, returns consolidated drift report |
 | `$coco-iac-agent-new-workload` | Skill | Onboard a team: role + warehouse + schemas + grants — with NAME PROPOSAL gate |
 | `$coco-iac-agent-new-role-user` | Skill | Add a user, create a role, update RBAC — with NAME PROPOSAL gate |
 | `$coco-iac-agent-account-objects` | Skill | Resource monitors, network rules, external access integrations — with NAME PROPOSAL gate |
@@ -91,6 +91,9 @@ live/<env>/configs/create_network_rules.tfvars
 live/<env>/configs/create_storage_integration_s3.tfvars
 live/<env>/configs/create_external_access_integrations.tfvars
 live/<env>/configs/create_stage_s3.tfvars
+live/<env>/configs/create_network_policies.tfvars
+live/<env>/configs/create_account_parameters.tfvars
+live/<env>/configs/create_service_users.tfvars
 ```
 
 ### Step 2 — Start CoCo from the repo root
@@ -115,7 +118,7 @@ chmod +x bootstrap/bootstrap.sh
 
 ### Step 3 — Run the script, use CoCo alongside
 
-The script walks all 10 stacks in dependency order.
+The script walks all 13 stacks in dependency order.
 - It shows you the plan.
 - It **hard-stops (exit 2)** if the plan contains `# forces replacement`.
 - Otherwise it prompts `[y/N]` before each `apply`.
@@ -136,7 +139,7 @@ $coco-iac-agent-bootstrap-guide Got this error on stack 6: [paste error]
 $coco-iac-agent-bootstrap-guide I've applied stacks 1–5. What's next?
 ```
 
-### Step 4 — Verify after all 10 stacks
+### Step 4 — Verify after all 13 stacks
 
 - Log into Snowflake — confirm you auto-land in your workspace schema
 - Warehouses visible and auto-suspending
@@ -270,7 +273,7 @@ Use when you suspect someone made manual changes to Snowflake outside Terraform.
 $coco-iac-agent-drift-report run drift report for all stacks in prod
 ```
 
-The agent runs autonomously — no input needed. It runs `terraform plan -detailed-exitcode` across all 10 stacks and returns:
+The agent runs autonomously — no input needed. It runs `terraform plan -detailed-exitcode` across all 13 stacks and returns:
 
 ```
 Stack: account_governance/roles     → ✓ OK (exit 0)

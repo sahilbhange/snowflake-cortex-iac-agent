@@ -1,6 +1,6 @@
 ---
 name: coco-iac-agent-account-objects
-description: Use when adding or modifying account-level platform objects — resource monitors, network rules, or external access integrations. Generates tfvars entries following the existing configs/ pattern and runs terraform plan for each affected stack.
+description: Use when adding or modifying account-level platform objects — resource monitors, network rules, network policies, external access integrations, or account parameters. Generates tfvars entries following the existing configs/ pattern and runs terraform plan for each affected stack.
 tools:
   - bash
   - read
@@ -9,7 +9,7 @@ tools:
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-15
+- **Last updated:** 2026-03-26
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -19,10 +19,12 @@ tools:
 - Adding or modifying a resource monitor (credit quota, frequency)
 - Adding a network rule (egress to PyPI, GitHub, external APIs)
 - Adding an external access integration referencing existing network rules
+- Adding or modifying a network policy (IP allowlist/blocklist)
+- Setting or updating account parameters (timeouts, timezone, retention)
 - Any combination of the above when wiring a new egress path end-to-end
 
 ## Goal
-Add account-level platform objects — resource monitors, network rules, external access integrations — with correct provider aliases, naming, and dependency ordering.
+Add account-level platform objects — resource monitors, network rules, network policies, external access integrations, account parameters — with correct provider aliases, naming, and dependency ordering.
 One tfvars change per affected stack, plan output for each.
 
 ## Object Types
@@ -97,18 +99,65 @@ external_access_integrations = {
 }
 ```
 
+### Network Policies
+- **Provider alias:** `accountadmin`
+- **Stack:** `platform/network_policies`
+- **Config:** `create_network_policies.tfvars`
+- **Resource:** `snowflake_network_policy`
+- Naming pattern: `<SCOPE>_NETWORK_POLICY` (e.g. `ACCOUNT_NETWORK_POLICY`, `OFFICE_NETWORK_POLICY`)
+- Controls inbound IP access at account or user level
+- `allowed_ip_list`: CIDRs allowed to connect
+- `blocked_ip_list`: CIDRs explicitly blocked (evaluated after allowed)
+- Can also reference network rules via `allowed_network_rule_list` / `blocked_network_rule_list`
+
+⚠️ **HIGH RISK**: Assigning a network policy to the account (`ALTER ACCOUNT SET NETWORK_POLICY`) with a wrong `allowed_ip_list` locks out ALL users including the admin. Always validate the IP list before applying. The Terraform module creates the policy but does NOT assign it to the account — that's a separate manual step.
+
+```hcl
+# create_network_policies.tfvars
+enable_network_policies = true
+network_policies = {
+  ACCOUNT_NETWORK_POLICY = {
+    allowed_ip_list = ["203.0.113.0/24", "198.51.100.0/24"]
+    blocked_ip_list = []
+    comment         = "Account-level network policy — controls inbound access"
+  }
+}
+```
+
+### Account Parameters
+- **Provider alias:** `accountadmin`
+- **Stack:** `platform/account_parameters`
+- **Config:** `create_account_parameters.tfvars`
+- **Resource:** `snowflake_account_parameter`
+- No naming pattern — keys are Snowflake parameter names (uppercase)
+- Values are always strings, even for numeric/boolean parameters
+- Common parameters: `STATEMENT_TIMEOUT_IN_SECONDS`, `TIMEZONE`, `DATA_RETENTION_TIME_IN_DAYS`, `PERIODIC_DATA_REKEYING`, `ENABLE_TRI_SECRET_NET`, `REQUIRE_STORAGE_INTEGRATION_FOR_STAGE_CREATION`
+
+```hcl
+# create_account_parameters.tfvars
+account_parameters = {
+  STATEMENT_TIMEOUT_IN_SECONDS                   = "3600"
+  TIMEZONE                                       = "America/New_York"
+  DATA_RETENTION_TIME_IN_DAYS                    = "1"
+  PERIODIC_DATA_REKEYING                         = "false"
+  REQUIRE_STORAGE_INTEGRATION_FOR_STAGE_CREATION = "true"
+}
+```
+
 ## Dependency Order
 
-These stacks must be applied in this sequence when all three are involved:
+These stacks must be applied in this sequence when all five are involved:
 
 ```
-platform/resource_monitors        (independent — accountadmin)
+platform/resource_monitors              (independent — accountadmin)
+platform/network_policies               (independent — accountadmin)
+platform/account_parameters             (independent — accountadmin)
      ↓
-workloads/schemas                 (ADMIN_DB.GOVERNANCE must exist before network rules)
+workloads/schemas                       (ADMIN_DB.GOVERNANCE must exist before network rules)
      ↓
-platform/network_rules            (secadmin — depends on ADMIN_DB.GOVERNANCE schema)
+platform/network_rules                  (secadmin — depends on ADMIN_DB.GOVERNANCE schema)
      ↓
-platform/external_access_integrations  (accountadmin — depends on network rules)
+platform/external_access_integrations   (accountadmin — depends on network rules)
 ```
 
 When adding only one or two object types, skip unaffected stacks.
@@ -121,6 +170,8 @@ When adding only one or two object types, skip unaffected stacks.
 SHOW RESOURCE MONITORS;
 SHOW NETWORK RULES IN SCHEMA ADMIN_DB.GOVERNANCE;
 SHOW EXTERNAL ACCESS INTEGRATIONS;
+SHOW NETWORK POLICIES;
+SHOW PARAMETERS IN ACCOUNT;
 ```
 
 **If objects already exist:**
@@ -142,11 +193,18 @@ terraform -chdir=live/<env>/platform/network_rules import \
 # External access integrations
 terraform -chdir=live/<env>/platform/external_access_integrations import \
   'module.external_access_integration["<EAI_NAME>"].snowflake_external_access_integration.this' '<EAI_NAME>'
+
+# Network policies
+terraform -chdir=live/<env>/platform/network_policies import \
+  'module.network_policies.snowflake_network_policy.this["<POLICY_NAME>"]' '<POLICY_NAME>'
+
+# Account parameters (no import needed — snowflake_account_parameter is idempotent;
+# just add the key/value to tfvars and plan will show the correct diff)
 ```
 
 ## Steps
 
-1. **Detect intent** — identify which object type(s) the user is adding (resource monitor, network rule, EAI, or combination)
+1. **Detect intent** — identify which object type(s) the user is adding (resource monitor, network rule, EAI, network policy, account parameter, or combination)
 2. **NAME PROPOSAL** — before touching any file, read `references/naming-conventions.md`, scan the relevant existing tfvars for conflicts, then present:
    ```
    ## Name Proposal — <request summary> — <env>
@@ -156,6 +214,8 @@ terraform -chdir=live/<env>/platform/external_access_integrations import \
    | Resource monitor         | RM_MONTHLY_LIMIT[_TEST]         | RM_<SCOPE>_<LIMIT> + suffix           | Yes        | None     |
    | Network rule             | PYPI_NETWORK_RULE[_TEST]        | <PURPOSE>_NETWORK_RULE + suffix       | Yes        | None     |
    | External access integration | PYPI_ACCESS_INTEGRATION[_TEST] | <PURPOSE>_ACCESS_INTEGRATION + suffix | Yes        | None     |
+   | Network policy           | ACCOUNT_NETWORK_POLICY[_TEST]   | <SCOPE>_NETWORK_POLICY + suffix       | Yes        | None     |
+   | Account parameter        | (n/a — Snowflake param names)   | Uppercase Snowflake parameter name    | No         | n/a      |
 
    Approve these names, or reply with corrections before I generate any files.
    ```
@@ -174,6 +234,16 @@ terraform -chdir=live/<env>/platform/external_access_integrations import \
    bash scripts/stack-plan.sh <env> platform resource_monitors --run 2>&1 | tee "$plan_out"
    bash scripts/scan-forcenew.sh "$plan_out"
 
+   # Network policies (if changed)
+   plan_out=$(mktemp)
+   bash scripts/stack-plan.sh <env> platform network_policies --run 2>&1 | tee "$plan_out"
+   bash scripts/scan-forcenew.sh "$plan_out"
+
+   # Account parameters (if changed)
+   plan_out=$(mktemp)
+   bash scripts/stack-plan.sh <env> platform account_parameters --run 2>&1 | tee "$plan_out"
+   bash scripts/scan-forcenew.sh "$plan_out"
+
    # Network rules (if changed)
    plan_out=$(mktemp)
    bash scripts/stack-plan.sh <env> platform network_rules --run 2>&1 | tee "$plan_out"
@@ -190,6 +260,8 @@ terraform -chdir=live/<env>/platform/external_access_integrations import \
 7. **APPLY** — output apply commands in dependency order, wait for user to confirm completion of each:
    ```bash
    bash scripts/stack-apply.sh <env> platform resource_monitors      # if changed
+   bash scripts/stack-apply.sh <env> platform network_policies       # if changed
+   bash scripts/stack-apply.sh <env> platform account_parameters     # if changed
    bash scripts/stack-apply.sh <env> platform network_rules          # if changed
    bash scripts/stack-apply.sh <env> platform external_access_integrations  # if changed
    ```
@@ -200,6 +272,8 @@ terraform -chdir=live/<env>/platform/external_access_integrations import \
      SHOW RESOURCE MONITORS LIKE '<RM_NAME>';
      SHOW NETWORK RULES IN SCHEMA ADMIN_DB.GOVERNANCE LIKE '<RULE_NAME>';
      SHOW EXTERNAL ACCESS INTEGRATIONS LIKE '<EAI_NAME>';
+     SHOW NETWORK POLICIES LIKE '<POLICY_NAME>';
+     SHOW PARAMETERS IN ACCOUNT LIKE '<PARAM_KEY>';
      ```
    Do NOT ask "what's next?" — proceed directly to compliance check.
 9. **COMPLIANCE** — check against standards (naming was pre-approved in NAME PROPOSAL — see `references/naming-conventions.md`):
@@ -209,6 +283,8 @@ terraform -chdir=live/<env>/platform/external_access_integrations import \
    | Resource monitors | `accountadmin` provider, `start_timestamp` commented or set to a future date |
    | Network rules | `secadmin` provider, lives in `ADMIN_DB.GOVERNANCE`, `mode = "EGRESS"` for outbound |
    | External access integrations | `accountadmin` provider, `allowed_network_rules` uses fully-qualified `DB.SCHEMA.RULE` references, `enabled = true` |
+   | Network policies | `accountadmin` provider, `allowed_ip_list` is not empty (or has `0.0.0.0/0` placeholder), warn if assigning to account |
+   | Account parameters | `accountadmin` provider, values are strings, keys are uppercase Snowflake parameter names |
 
 10. **SUMMARY** — generate formatted change report:
     - All objects created (names, types, key config)
@@ -236,7 +312,7 @@ See `cortex ctx` rules — replaces `references/guardrails.md` for behavioral en
 - `references/guardrails.md` — safety rules, command format
 
 ## Output
-- Modified `configs/create_resource_monitor.tfvars`, `create_network_rules.tfvars`, `create_external_access_integrations.tfvars` (as applicable)
+- Modified `configs/create_resource_monitor.tfvars`, `create_network_rules.tfvars`, `create_external_access_integrations.tfvars`, `create_network_policies.tfvars`, `create_account_parameters.tfvars` (as applicable)
 - `terraform plan` output for each affected stack in dependency order
 - Risk summary if any `# forces replacement` or unexpected destroy detected on existing EAIs
 
@@ -257,3 +333,11 @@ Assistant: Reads `create_network_rules.tfvars` — adds `GITHUB_NETWORK_RULE`. R
 ### Example 4: EAI destroy/recreate detected
 Plan output shows: `snowflake_external_access_integration.pypi will be destroyed` (forces replacement)
 Assistant: Stops. Flags HIGH RISK — EAI destroy will break any UDFs or Snowpark functions currently referencing it. Points to `live/<env>/platform/external_access_integrations/` SnowSQL scripts as the safe path for in-place update. Does NOT output apply command.
+
+### Example 5: Add network policy
+User: `$coco-iac-agent-account-objects add network policy for office IPs 203.0.113.0/24 in test`
+Assistant: NAME PROPOSAL: `OFFICE_NETWORK_POLICY_TEST`. Reads `create_network_policies.tfvars`, adds entry with `allowed_ip_list = ["203.0.113.0/24"]`, `blocked_ip_list = []`. Runs plan for `platform/network_policies` — shows 1 to add. Warns: "This creates the policy but does NOT assign it to the account. To activate, run `ALTER ACCOUNT SET NETWORK_POLICY = 'OFFICE_NETWORK_POLICY_TEST';` after apply — ensure your current IP is in the allowed list first." Outputs apply command.
+
+### Example 6: Set account parameters
+User: `$coco-iac-agent-account-objects set statement timeout to 1800 and timezone to UTC in test`
+Assistant: Reads `create_account_parameters.tfvars`, updates `STATEMENT_TIMEOUT_IN_SECONDS = "1800"` and `TIMEZONE = "UTC"`. Runs plan for `platform/account_parameters` — shows 2 to change. Outputs apply command.

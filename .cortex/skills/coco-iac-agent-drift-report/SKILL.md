@@ -8,7 +8,7 @@ model: auto
 ---
 
 ## Skill Metadata
-- **Last updated:** 2026-03-12
+- **Last updated:** 2026-03-26
 - **Matches module version:** two-layer RBAC (access roles + functional roles via `granted_roles`)
 - **Tested against:** snowflakedb/snowflake ~> 2.14
 
@@ -60,6 +60,9 @@ Stack sequence:
 8. `platform/network_rules` → `create_network_rules.tfvars`
 9. `platform/external_access_integrations` → `create_external_access_integrations.tfvars`
 10. `workloads/stages` → `create_stage_s3.tfvars`
+11. `platform/network_policies` → `create_network_policies.tfvars`
+12. `platform/account_parameters` → `create_account_parameters.tfvars`
+13. `account_governance/service_users` → `create_service_users.tfvars`
 
 ### Exit Code Interpretation
 - `No changes` in output → State matches live Snowflake
@@ -89,6 +92,12 @@ terraform -chdir=live/<env>/workloads/schemas state list 2>/dev/null | grep 'sno
 
 # Databases in state
 terraform -chdir=live/<env>/platform/databases state list 2>/dev/null | grep 'snowflake_database.this' | sed 's/.*\["//' | sed 's/"\]//'
+
+# Service users in state
+terraform -chdir=live/<env>/account_governance/service_users state list 2>/dev/null | grep 'snowflake_service_user.this' | sed 's/.*\["//' | sed 's/"\]//'
+
+# Network policies in state
+terraform -chdir=live/<env>/platform/network_policies state list 2>/dev/null | grep 'snowflake_network_policy.this' | sed 's/.*\["//' | sed 's/"\]//'
 ```
 
 ### Step 2.2: Query Snowflake for all objects
@@ -114,6 +123,16 @@ snow sql -q "SHOW DATABASES;" -c "$CONNECTION" --format json
 # All schemas in managed databases (use database names from Step 2.1)
 # For each database name from terraform state:
 snow sql -q "SHOW SCHEMAS IN DATABASE <DB_NAME>;" -c "$CONNECTION" --format json
+
+# All network policies
+snow sql -q "SHOW NETWORK POLICIES;" -c "$CONNECTION" --format json
+
+# All account parameters (non-default only)
+snow sql -q "SHOW PARAMETERS IN ACCOUNT;" -c "$CONNECTION" --format json
+# Filter: compare "value" vs "default" columns — only flag rows where value != default
+
+# All service users (filter from SHOW USERS by type)
+# Use the SHOW USERS output from above and filter by TYPE = 'SERVICE'
 ```
 
 Filter out system objects (see "System Objects to Exclude" below).
@@ -219,7 +238,7 @@ After both phases complete, output exactly this structure:
    Action: Safe to apply or ignore.
 
 ### Summary
-- Stacks checked: 10
+ - Stacks checked: 13
 - Clean: 8
 - State drift: 1
 - Errors: 1

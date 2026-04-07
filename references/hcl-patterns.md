@@ -160,7 +160,10 @@ resource "snowflake_user" "john_doe" {
 }
 ```
 
-## User — Service Account (RSA key auth)
+## User — Service Account (RSA key auth) — LEGACY
+> **Prefer `snowflake_service_user` below for new service accounts.**
+> This pattern uses `snowflake_user` which creates a LEGACY-type user. It still works
+> but does not enforce TYPE=SERVICE at the Snowflake level.
 ```hcl
 resource "snowflake_user" "terraform_svc" {
   provider          = snowflake.secadmin
@@ -170,6 +173,108 @@ resource "snowflake_user" "terraform_svc" {
   rsa_public_key    = file("${path.module}/keys/terraform_svc.pub")
   default_role      = snowflake_account_role.ci_role.name
   default_warehouse = snowflake_warehouse.ci_wh.name
+}
+```
+
+## Service User (TYPE=SERVICE) — v2.x
+Uses `snowflake_service_user` (provider v2.14+). Enforces TYPE=SERVICE at Snowflake
+level — no password, no interactive login, key-pair auth only.
+- **Provider**: `secadmin`
+- **Stack**: `account_governance/service_users`
+- **Config**: `create_service_users.tfvars`
+```hcl
+resource "snowflake_service_user" "dbt_svc" {
+  provider          = snowflake.secadmin
+  name              = "DBT_SVC"
+  login_name        = "dbt_svc"
+  display_name      = "dbt Service Account"
+  disabled          = false
+  default_role      = "DBT_ROLE"
+  default_warehouse = "DBT_WH"
+  rsa_public_key    = "MIIBIjANBg..."   # managed outside Terraform
+  rsa_public_key_2  = null
+  comment           = "dbt Cloud service account — key-pair auth only"
+
+  lifecycle { ignore_changes = [rsa_public_key, rsa_public_key_2] }
+}
+
+resource "snowflake_grant_account_role" "dbt_svc_roles" {
+  provider  = snowflake.secadmin
+  role_name = "DBT_ROLE"
+  user_name = snowflake_service_user.dbt_svc.name
+}
+```
+
+### Service User tfvars pattern
+```hcl
+service_users = {
+  DBT_SVC = {
+    login_name        = "dbt_svc"
+    display_name      = "dbt Service Account"
+    disabled          = false
+    default_role      = "DBT_ROLE"
+    default_warehouse = "DBT_WH"
+    rsa_public_key    = "MIIBIjANBg..."
+    rsa_public_key_2  = null
+    comment           = "dbt Cloud service account"
+    granted_roles     = ["DBT_ROLE"]
+  }
+}
+```
+
+## Network Policy
+Uses `snowflake_network_policy` (provider v2.x). Controls inbound IP access at
+account or user level.
+- **Provider**: `accountadmin`
+- **Stack**: `platform/network_policies`
+- **Config**: `create_network_policies.tfvars`
+```hcl
+resource "snowflake_network_policy" "account_policy" {
+  provider = snowflake.accountadmin
+  name     = "ACCOUNT_NETWORK_POLICY"
+
+  allowed_ip_list    = ["203.0.113.0/24", "198.51.100.0/24"]
+  blocked_ip_list    = ["203.0.113.50/32"]
+  allowed_network_rule_list = []
+  blocked_network_rule_list = []
+
+  comment = "Account-level network policy — controls inbound access"
+}
+```
+
+### Network Policy tfvars pattern
+```hcl
+network_policies = {
+  ACCOUNT_NETWORK_POLICY = {
+    allowed_ip_list = ["203.0.113.0/24", "198.51.100.0/24"]
+    blocked_ip_list = ["203.0.113.50/32"]
+    comment         = "Account-level network policy"
+  }
+}
+```
+
+## Account Parameter
+Uses `snowflake_account_parameter` (provider v2.x). Sets account-level configuration.
+- **Provider**: `accountadmin`
+- **Stack**: `platform/account_parameters`
+- **Config**: `create_account_parameters.tfvars`
+```hcl
+resource "snowflake_account_parameter" "stmt_timeout" {
+  provider = snowflake.accountadmin
+  key      = "STATEMENT_TIMEOUT_IN_SECONDS"
+  value    = "3600"
+}
+```
+
+### Account Parameter tfvars pattern
+```hcl
+account_parameters = {
+  STATEMENT_TIMEOUT_IN_SECONDS           = "3600"
+  TIMEZONE                               = "America/New_York"
+  DATA_RETENTION_TIME_IN_DAYS            = "1"
+  PERIODIC_DATA_REKEYING                 = "false"
+  ENABLE_TRI_SECRET_NET                  = "false"
+  REQUIRE_STORAGE_INTEGRATION_FOR_STAGE_CREATION = "true"
 }
 ```
 
@@ -195,6 +300,9 @@ resource "snowflake_grant_privileges_to_account_role" "analyst_db" {
 - `snowflake_user.login_name` is ForceNew — warn before changing
 - `snowflake_schema.with_managed_access` change → ForceNew — HIGH RISK
 - Grant resources may show a plan on first apply — expected
+- `snowflake_service_user` — TYPE=SERVICE enforced; no password allowed; key-pair only
+- `snowflake_network_policy` — removing a policy assigned to the account locks everyone out; always validate allowed_ip_list first
+- `snowflake_account_parameter` — key is uppercased automatically; value is always a string
 
 ## Snow CLI
 ```bash
