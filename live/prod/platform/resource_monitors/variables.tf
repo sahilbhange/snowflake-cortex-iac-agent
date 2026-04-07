@@ -39,13 +39,13 @@ variable "enable_resource_monitor" {
 variable "resource_monitors" {
   description = "Map of resource monitors to manage (key = monitor name)."
   type = map(object({
-    credit_quota                 = number
-    frequency                    = optional(string)
-    start_timestamp              = optional(string)
-    notify_triggers              = optional(list(number))
-    suspend_trigger              = optional(number)
-    suspend_immediately_trigger  = optional(number)
-    notify_users                 = optional(list(string))
+    credit_quota                = number
+    frequency                   = optional(string)
+    start_timestamp             = optional(string)
+    notify_triggers             = optional(list(number))
+    suspend_trigger             = optional(number)
+    suspend_immediately_trigger = optional(number)
+    notify_users                = optional(list(string))
   }))
   default = {}
 }

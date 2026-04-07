@@ -39,11 +39,11 @@ variable "enable_network_policies" {
 variable "network_policies" {
   description = "Map of network policies to manage (key = policy name)."
   type = map(object({
-    allowed_ip_list            = optional(list(string), [])
-    blocked_ip_list            = optional(list(string), [])
-    allowed_network_rule_list  = optional(list(string), [])
-    blocked_network_rule_list  = optional(list(string), [])
-    comment                    = optional(string)
+    allowed_ip_list           = optional(list(string), [])
+    blocked_ip_list           = optional(list(string), [])
+    allowed_network_rule_list = optional(list(string), [])
+    blocked_network_rule_list = optional(list(string), [])
+    comment                   = optional(string)
   }))
   default = {}
 }
