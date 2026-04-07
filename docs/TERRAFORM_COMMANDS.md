@@ -1,6 +1,6 @@
 # Terraform Commands Reference
 
-Raw Terraform commands for all 10 stacks — no helper scripts, no wrappers.
+Raw Terraform commands for all 13 stacks — no helper scripts, no wrappers.
 Use this as a cheat sheet, for CI integration, or to understand what the scripts do under the hood.
 
 > **Recommended path:** Use `bash scripts/stack-plan.sh <env> <layer> <resource> --run` and `bash scripts/stack-apply.sh <env> <layer> <resource>` — they add pre-flight checks, ForceNew detection, and a human confirmation prompt. This file is for users who want direct Terraform control.
@@ -29,7 +29,7 @@ export TF_VAR_query_tag="terraform"
 
 ---
 
-## All 10 stacks
+## All 13 stacks
 
 ### Init (run once per stack, or after provider version changes)
 
@@ -44,6 +44,9 @@ terraform -chdir=live/<env>/workloads/schemas                      init -upgrade
 terraform -chdir=live/<env>/platform/network_rules                 init -upgrade
 terraform -chdir=live/<env>/platform/external_access_integrations  init -upgrade
 terraform -chdir=live/<env>/workloads/stages                       init -upgrade
+terraform -chdir=live/<env>/platform/network_policies              init -upgrade
+terraform -chdir=live/<env>/platform/account_parameters            init -upgrade
+terraform -chdir=live/<env>/account_governance/service_users       init -upgrade
 ```
 
 ### Plan (review before every apply)
@@ -59,6 +62,9 @@ terraform -chdir=live/<env>/workloads/schemas                     plan -var-file
 terraform -chdir=live/<env>/platform/network_rules                plan -var-file=../../account.auto.tfvars -var-file=../../configs/create_network_rules.tfvars
 terraform -chdir=live/<env>/platform/external_access_integrations plan -var-file=../../account.auto.tfvars -var-file=../../configs/create_external_access_integrations.tfvars
 terraform -chdir=live/<env>/workloads/stages                      plan -var-file=../../account.auto.tfvars -var-file=../../configs/create_stage_s3.tfvars
+terraform -chdir=live/<env>/platform/network_policies             plan -var-file=../../account.auto.tfvars -var-file=../../configs/create_network_policies.tfvars
+terraform -chdir=live/<env>/platform/account_parameters           plan -var-file=../../account.auto.tfvars -var-file=../../configs/create_account_parameters.tfvars
+terraform -chdir=live/<env>/account_governance/service_users      plan -var-file=../../account.auto.tfvars -var-file=../../configs/create_service_users.tfvars
 ```
 
 ### Apply (in dependency order — do not skip steps)
@@ -74,6 +80,9 @@ terraform -chdir=live/<env>/workloads/schemas                     apply -var-fil
 terraform -chdir=live/<env>/platform/network_rules                apply -var-file=../../account.auto.tfvars -var-file=../../configs/create_network_rules.tfvars
 terraform -chdir=live/<env>/platform/external_access_integrations apply -var-file=../../account.auto.tfvars -var-file=../../configs/create_external_access_integrations.tfvars
 terraform -chdir=live/<env>/workloads/stages                      apply -var-file=../../account.auto.tfvars -var-file=../../configs/create_stage_s3.tfvars
+terraform -chdir=live/<env>/platform/network_policies             apply -var-file=../../account.auto.tfvars -var-file=../../configs/create_network_policies.tfvars
+terraform -chdir=live/<env>/platform/account_parameters           apply -var-file=../../account.auto.tfvars -var-file=../../configs/create_account_parameters.tfvars
+terraform -chdir=live/<env>/account_governance/service_users      apply -var-file=../../account.auto.tfvars -var-file=../../configs/create_service_users.tfvars
 ```
 
 ---
@@ -148,3 +157,6 @@ terraform -chdir=live/<env>/account_governance/roles state show 'snowflake_accou
 | 8 | `platform/network_rules` | `create_network_rules.tfvars` | ADMIN_DB.GOVERNANCE (step 7) |
 | 9 | `platform/external_access_integrations` *(SnowSQL)* | `create_external_access_integrations.tfvars` | Network rules (step 8) |
 | 10 | `workloads/stages` | `create_stage_s3.tfvars` | Schemas (step 7), storage integrations (step 6) |
+| 11 | `platform/network_policies` | `create_network_policies.tfvars` | None |
+| 12 | `platform/account_parameters` | `create_account_parameters.tfvars` | None |
+| 13 | `account_governance/service_users` | `create_service_users.tfvars` | Roles (step 1) |

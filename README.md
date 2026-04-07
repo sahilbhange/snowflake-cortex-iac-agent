@@ -21,7 +21,7 @@ docs/                           ← user guides, architecture, skill guide
 references/                     ← stack order, workflow rules, naming conventions, safety guardrails
 bootstrap/                      ← first-time environment setup
 .cortex/
-  skills/                       ← CoCo skills and agents (10 total)
+  skills/                       ← CoCo skills and agents (13 total)
 ```
 
 Each directory under `live/<env>/...` is a standalone Terraform root with its own state.
@@ -66,6 +66,7 @@ flowchart LR
   subgraph Account_Governance["Account Governance"]
     Roles["modules/roles"]
     Users["modules/users"]
+    ServiceUsers["modules/service_users"]
   end
 
   subgraph Platform
@@ -75,6 +76,8 @@ flowchart LR
     StorageInt["modules/storage_integration_s3"]
     NetworkRules["modules/network_rules"]
     ExternalAccess["modules/external_access_integrations"]
+    NetworkPolicies["modules/network_policies"]
+    AccountParameters["modules/account_parameters"]
   end
 
   subgraph Workloads
@@ -84,6 +87,7 @@ flowchart LR
 
   SecAdmin --> Roles
   SecAdmin --> Users
+  SecAdmin --> ServiceUsers
   SecAdmin --> NetworkRules
 
   SysAdmin --> Databases
@@ -94,8 +98,11 @@ flowchart LR
   AccountAdmin --> ResourceMonitors
   AccountAdmin --> StorageInt
   AccountAdmin --> ExternalAccess
+  AccountAdmin --> NetworkPolicies
+  AccountAdmin --> AccountParameters
 
   Roles --> Users
+  Roles --> ServiceUsers
   Databases --> Schemas
   StorageInt --> Stages
   ResourceMonitors --> Warehouses
@@ -192,6 +199,9 @@ bash scripts/stack-apply.sh <env> <layer> <stack>
 | 8 | `platform/network_rules` | `create_network_rules.tfvars` |
 | 9 | `platform/external_access_integrations` *(SnowSQL)* | `create_external_access_integrations.tfvars` |
 | 10 | `workloads/stages` | `create_stage_s3.tfvars` |
+| 11 | `platform/network_policies` | `create_network_policies.tfvars` |
+| 12 | `platform/account_parameters` | `create_account_parameters.tfvars` |
+| 13 | `account_governance/service_users` | `create_service_users.tfvars` |
 
 For day-2 changes, re-apply only the one stack whose config changed.
 

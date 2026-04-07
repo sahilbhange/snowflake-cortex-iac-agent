@@ -1,7 +1,7 @@
 # Stack Mapping
 
 ## Ordered Execution
-Apply in this exact sequence — each stack depends on the previous:
+Apply in this sequence — 13 stacks total. Steps 11-13 have no upstream dependencies and can run after bootstrap:
 
 | Step | Stack | Config File | Key Dependency |
 |------|-------|-------------|----------------|
