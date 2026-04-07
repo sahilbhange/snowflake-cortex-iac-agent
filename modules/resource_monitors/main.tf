@@ -5,7 +5,7 @@ variable "resource_monitors" {
     start_timestamp             = optional(string)
     notify_triggers             = optional(list(number))
     suspend_trigger             = optional(number)
-    suspend_immediately_trigger = optional(number)
+    suspend_immediate_trigger = optional(number)
     notify_users                = optional(list(string))
   }))
   default = {}
@@ -43,7 +43,7 @@ locals {
       start_timestamp             = try(cfg.start_timestamp, null)
       notify_triggers             = try(cfg.notify_triggers, [])
       suspend_trigger             = try(cfg.suspend_trigger, null)
-      suspend_immediately_trigger = try(cfg.suspend_immediately_trigger, null)
+      suspend_immediate_trigger = try(cfg.suspend_immediate_trigger, null)
       notify_users                = try(cfg.notify_users, [])
     }
     if trimspace(monitor_name) != ""
@@ -58,7 +58,7 @@ locals {
       start_timestamp             = var.start_timestamp
       notify_triggers             = []
       suspend_trigger             = null
-      suspend_immediately_trigger = null
+      suspend_immediate_trigger = null
       notify_users                = []
     }
   }
@@ -88,7 +88,7 @@ resource "snowflake_resource_monitor" "this" {
 
   notify_triggers             = each.value.notify_triggers
   suspend_trigger             = each.value.suspend_trigger
-  suspend_immediately_trigger = each.value.suspend_immediately_trigger
+  suspend_immediate_trigger = each.value.suspend_immediate_trigger
   notify_users                = each.value.notify_users
 }
 

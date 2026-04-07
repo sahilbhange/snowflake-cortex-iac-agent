@@ -44,7 +44,7 @@ variable "resource_monitors" {
     start_timestamp             = optional(string)
     notify_triggers             = optional(list(number))
     suspend_trigger             = optional(number)
-    suspend_immediately_trigger = optional(number)
+    suspend_immediate_trigger = optional(number)
     notify_users                = optional(list(string))
   }))
   default = {}
